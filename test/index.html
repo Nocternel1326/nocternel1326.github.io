@@ -49,7 +49,7 @@
             border-radius: 6px;
             font-size: 1rem;
         }
-        button[type="submit"] {
+        button[type="submit"], .action-btn {
             padding: 0.75rem;
             background: #333;
             color: white;
@@ -58,15 +58,17 @@
             font-size: 1rem;
             cursor: pointer;
         }
-        button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+        button[type="submit"]:disabled, .action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .message {
             padding: 0.75rem;
             border-radius: 6px;
             margin-bottom: 1rem;
             font-size: 0.9rem;
+            line-height: 1.4;
         }
         .error { background: #fee; color: #c00; }
         .success { background: #efe; color: #060; }
+        .info { background: #eef; color: #006; }
         .hidden { display: none; }
         .user-info {
             text-align: center;
@@ -93,15 +95,15 @@
 
             <!-- Sign In Form -->
             <form id="login-form" onsubmit="handleLogin(event)">
-                <input type="email" id="login-email" placeholder="Email" required>
-                <input type="password" id="login-password" placeholder="Password" required>
+                <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
+                <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
                 <button type="submit" id="login-btn">Sign In</button>
             </form>
 
             <!-- Register Form -->
             <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
-                <input type="email" id="register-email" placeholder="Email" required>
-                <input type="password" id="register-password" placeholder="Password (min 6 chars)" required minlength="6">
+                <input type="email" id="register-email" placeholder="Email" required autocomplete="email">
+                <input type="password" id="register-password" placeholder="Password (min 6 chars)" required minlength="6" autocomplete="new-password">
                 <button type="submit" id="register-btn">Create Account</button>
             </form>
         </div>
@@ -112,7 +114,7 @@
                 Signed in as:<br>
                 <strong id="user-email"></strong>
             </div>
-            <button type="submit" onclick="handleLogout()">Sign Out</button>
+            <button class="action-btn" onclick="handleLogout()">Sign Out</button>
         </div>
     </div>
 
@@ -134,7 +136,7 @@
             hideMessage();
         }
 
-        function showMessage(text, type) {
+        function showMessage(text, type = 'info') {
             const el = document.getElementById('message');
             el.textContent = text;
             el.className = `message ${type}`;
@@ -145,16 +147,16 @@
             document.getElementById('message').classList.add('hidden');
         }
 
-        function setLoading(btnId, loading) {
+        function setLoading(btnId, loading, originalText) {
             const btn = document.getElementById(btnId);
             btn.disabled = loading;
-            btn.textContent = loading ? 'Please wait...' : btn.textContent;
+            btn.textContent = loading ? 'Please wait...' : originalText;
         }
 
         function showDashboard(user) {
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('dashboard-section').classList.remove('hidden');
-            document.getElementById('user-email').textContent = user.email;
+            document.getElementById('user-email').textContent = user.email || '(no email)';
         }
 
         function showAuthForms() {
@@ -166,44 +168,62 @@
         async function handleLogin(e) {
             e.preventDefault();
             hideMessage();
-            setLoading('login-btn', true);
+            setLoading('login-btn', true, 'Sign In');
 
-            const email = document.getElementById('login-email').value;
+            const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
 
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-            setLoading('login-btn', false);
+            console.log('Login response:', { data, error });
+
+            setLoading('login-btn', false, 'Sign In');
 
             if (error) {
                 showMessage(error.message, 'error');
                 return;
             }
-            // onAuthStateChange will handle the UI switch
+            // onAuthStateChange handles the UI switch
         }
 
         async function handleRegister(e) {
             e.preventDefault();
             hideMessage();
-            setLoading('register-btn', true);
+            setLoading('register-btn', true, 'Create Account');
 
-            const email = document.getElementById('register-email').value;
+            const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
 
             const { data, error } = await supabase.auth.signUp({ email, password });
 
-            setLoading('register-btn', false);
+            // Debug: open DevTools Console (F12) to inspect this
+            console.log('SignUp response:', { data, error });
+
+            setLoading('register-btn', false, 'Create Account');
 
             if (error) {
+                // Common case: email rate limit or duplicate user
                 showMessage(error.message, 'error');
                 return;
             }
 
+            // Case 1: Email confirmation required (session is null)
             if (data.user && !data.session) {
-                showMessage('Account created! Check your email for a confirmation link.', 'success');
-            } else {
-                showMessage('Account created and signed in.', 'success');
+                showMessage(
+                    'Account created! Check your inbox for a confirmation link before signing in.',
+                    'success'
+                );
+                return;
             }
+
+            // Case 2: Auto-confirmed and signed in
+            if (data.user && data.session) {
+                showMessage('Account created and signed in.', 'success');
+                return;
+            }
+
+            // Fallback (should not normally happen)
+            showMessage('Sign-up completed, but no session returned. Try signing in.', 'info');
         }
 
         async function handleLogout() {
@@ -231,6 +251,12 @@
                 }
             });
         }
+
+        // Expose handlers to global scope (needed because script is type="module")
+        window.switchTab = switchTab;
+        window.handleLogin = handleLogin;
+        window.handleRegister = handleRegister;
+        window.handleLogout = handleLogout;
 
         init();
     </script>
