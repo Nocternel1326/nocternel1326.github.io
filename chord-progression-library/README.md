@@ -15,3 +15,4 @@ from src import library
 
 chords = library.get_progression("Pop Progression", key="C")
 # [C, G, Amin, F]
+```
