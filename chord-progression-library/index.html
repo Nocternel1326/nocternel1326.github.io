@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chord Progression Library</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🎵 Chord Progression Library</h1>
+    <p>A tiny JavaScript library for common chord progressions.</p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <label>
+        Progression:
+        <select id="progression-select"></select>
+      </label>
+      <label>
+        Key:
+        <select id="key-select">
+          <option>C</option><option>C#</option><option>D</option>
+          <option>D#</option><option>E</option><option>F</option>
+          <option>F#</option><option>G</option><option>G#</option>
+          <option>A</option><option>A#</option><option>B</option>
+        </select>
+      </label>
+      <button id="show-btn">Show progression</button>
+    </section>
+
+    <section id="output" class="output">
+      <p>Select a progression and press <em>Show progression</em>.</p>
+    </section>
+  </main>
+
+  <script src="chord-library.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>
