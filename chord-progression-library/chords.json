@@ -1,0 +1,19 @@
+{
+  "progressions": {
+    "I-IV-V-I":          { "numerals": ["I","IV","V","I"],              "mode": "major", "contributor": "built-in" },
+    "I-V-vi-IV":         { "numerals": ["I","V","vi","IV"],             "mode": "major", "contributor": "built-in" },
+    "vi-IV-I-V":         { "numerals": ["vi","IV","I","V"],             "mode": "major", "contributor": "built-in" },
+    "I-vi-IV-V":         { "numerals": ["I","vi","IV","V"],             "mode": "major", "contributor": "built-in" },
+    "ii-V-I":            { "numerals": ["ii","V","I"],                  "mode": "major", "contributor": "built-in" },
+    "I-iii-IV-V":        { "numerals": ["I","iii","IV","V"],            "mode": "major", "contributor": "built-in" },
+    "I-vi-ii-V":         { "numerals": ["I","vi","ii","V"],             "mode": "major", "contributor": "built-in" },
+    "Canon (Pachelbel)": { "numerals": ["I","V","vi","iii","IV","I","IV","V"], "mode": "major", "contributor": "built-in" },
+    "i-iv-v-i":          { "numerals": ["i","iv","v","i"],              "mode": "minor", "contributor": "built-in" },
+    "i-VI-III-VII":      { "numerals": ["i","VI","III","VII"],          "mode": "minor", "contributor": "built-in" },
+    "i-VII-VI-VII":      { "numerals": ["i","VII","VI","VII"],          "mode": "minor", "contributor": "built-in" },
+    "i-iv-VII-III":      { "numerals": ["i","iv","VII","III"],          "mode": "minor", "contributor": "built-in" },
+    "i-ii°-V-i":         { "numerals": ["i","ii°","V","i"],             "mode": "minor", "contributor": "built-in" },
+    "12-bar-blues":      { "numerals": ["I","I","I","I","IV","IV","I","I","V","IV","I","V"], "mode": "major", "contributor": "built-in" },
+    "rhythm-changes-A":  { "numerals": ["I","vi","ii","V"],             "mode": "major", "contributor": "built-in" }
+  }
+}
