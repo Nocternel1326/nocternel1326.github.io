@@ -73,7 +73,6 @@ document.addEventListener("DOMContentLoaded", () => {
           )
           .join("")}
       </div>
-      <pre class="raw-output">${JSON.stringify(progression, null, 2)}</pre>
     `;
 
     console.log(`[demo] ${name} in ${key} (${mode}):`, progression);
