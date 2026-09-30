@@ -948,7 +948,7 @@
   let terrain = {
     waterMask: null,
     waterCtx: null,
-    features: { lakes: [], trees: [], shrubs: [], rocks: [], flowers: [] }
+    features: { lakes: [], trees: [], shrubs: [], rocks: [], flowers: [], noise: [] }
   };
 
   let savedTerrainSnapshot = null;
@@ -1124,6 +1124,19 @@
     }
     terrain.features.flowers = flowers;
 
+    // --- Noise patches (randomized per terrain) ---
+    const noise = [];
+    for (let i = 0; i < 60; i++) {
+      noise.push({
+        x: Math.random() * worldWidth,
+        y: Math.random() * worldHeight,
+        rx: 40 + Math.random() * 70,
+        ry: 30 + Math.random() * 50,
+        rot: Math.random() * Math.PI
+      });
+    }
+    terrain.features.noise = noise;
+
     saveTerrainSnapshot();
   }
 
@@ -1137,7 +1150,8 @@
       trees: terrain.features.trees.map(t => ({ ...t })),
       shrubs: terrain.features.shrubs.map(s => ({ ...s })),
       rocks: terrain.features.rocks.map(r => ({ ...r })),
-      flowers: terrain.features.flowers.map(f => ({ ...f }))
+      flowers: terrain.features.flowers.map(f => ({ ...f })),
+      noise: terrain.features.noise.map(n => ({ ...n }))
     };
   }
 
@@ -1156,6 +1170,7 @@
     terrain.features.shrubs = savedTerrainSnapshot.shrubs.map(s => ({ ...s }));
     terrain.features.rocks = savedTerrainSnapshot.rocks.map(r => ({ ...r }));
     terrain.features.flowers = savedTerrainSnapshot.flowers.map(f => ({ ...f }));
+    terrain.features.noise = savedTerrainSnapshot.noise.map(n => ({ ...n }));
 
     const mask = document.createElement('canvas');
     mask.width = worldWidth;
@@ -1237,16 +1252,11 @@
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
+    // Noise patches — now driven by the pre-generated random list
     ctx.save();
-    for (let i = 0; i < 60; i++) {
-      const seedX = (Math.sin(i * 12.9898) * 43758.5453) % 1;
-      const seedY = (Math.sin(i * 78.233) * 43758.5453) % 1;
-      const x = Math.abs(seedX) * worldWidth;
-      const y = Math.abs(seedY) * worldHeight;
-      const rx = 40 + (Math.abs(seedX) * 70);
-      const ry = 30 + (Math.abs(seedY) * 50);
+    for (let np of terrain.features.noise) {
       ctx.beginPath();
-      ctx.ellipse(x, y, rx, ry, 0, 0, 2 * Math.PI);
+      ctx.ellipse(np.x, np.y, np.rx, np.ry, np.rot, 0, 2 * Math.PI);
       ctx.fillStyle = biomeData.noiseColor;
       ctx.fill();
     }
