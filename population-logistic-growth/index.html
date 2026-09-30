@@ -36,7 +36,7 @@
     .world-container { flex: 1; width: 100%; height: 100%; position: relative; }
     .world-canvas { display: block; width: 100%; height: 100%; }
 
-    /* ---- Extinction overlay ----  */
+    /* ---- Extinction overlay ---- */
     .extinction-overlay {
       position: absolute; inset: 0;
       background: rgba(30, 20, 10, 0.82);
@@ -247,7 +247,6 @@
       height: 180px !important; max-height: 180px;
     }
 
-    /* Chart panel action row (settings + resize) */
     .chart-actions {
       display: flex;
       gap: 0.4rem;
@@ -321,7 +320,6 @@
       display: block;
     }
 
-    /* Toggle switch */
     .toggle-switch {
       position: relative;
       display: inline-block;
@@ -375,7 +373,6 @@
     .left-stack::-webkit-scrollbar-thumb { background: #c8b87a; border-radius: 3px; }
     .left-stack::-webkit-scrollbar-track { background: transparent; }
 
-    /* Legend (single row, never wraps) */
     .legend-panel {
       background: rgba(255, 253, 240, 0.92);
       border-radius: 12px; padding: 0.5rem 0.7rem;
@@ -422,7 +419,6 @@
       flex-shrink: 0;
     }
 
-    /* Stats panel */
     .stats-panel {
       padding: 0.75rem 1rem 0.9rem 1rem;
       font-size: 0.82rem;
@@ -467,7 +463,6 @@
       background: #f0c8c8; color: #8a1a1a; border-color: #c88a8a;
     }
 
-    /* Disasters panel */
     .disasters-panel {
       padding: 0.8rem 0.9rem 0.9rem 0.9rem;
     }
@@ -515,7 +510,6 @@
       margin-top: 0.05rem;
     }
 
-    /* Active disaster banner */
     .disaster-banner {
       position: absolute;
       top: 5.8rem;
@@ -594,8 +588,8 @@
       </div>
 
       <div class="ext-buttons">
-        <button class="btn btn-restart" id="extRestartBtn">Restart (same terrain)</button>
-        <button class="btn btn-refresh" id="extRefreshBtn">Refresh (new terrain)</button>
+        <button class="btn btn-restart" id="extRestartBtn">Restart</button>
+        <button class="btn btn-refresh" id="extRefreshBtn">Refresh</button>
       </div>
     </div>
   </div>
@@ -603,7 +597,6 @@
   <!-- Left column stack -->
   <div class="left-stack">
 
-    <!-- Legend + Biome badge -->
     <div class="legend-panel">
       <div class="legend-item"><span class="legend-swatch normal"></span> Alive</div>
       <div class="legend-item"><span class="legend-swatch born"></span> Born</div>
@@ -611,7 +604,6 @@
       <span class="biome-badge" id="biomeBadge">🌾 Plain</span>
     </div>
 
-    <!-- Statistics panel -->
     <div class="stats-panel panel">
       <h3>📊 Statistics <span class="tick-mini" id="tickDisplay">t = 0.00 | N = 10</span></h3>
       <div class="stat-row">
@@ -656,7 +648,6 @@
       </div>
     </div>
 
-    <!-- Disasters panel -->
     <div class="disasters-panel panel">
       <h2>⚠️ Abiotic Factors</h2>
       <div class="disaster-grid">
@@ -695,7 +686,6 @@
 
   </div>
 
-  <!-- Active disaster banner -->
   <div class="disaster-banner" id="disasterBanner"></div>
 
   <!-- Settings panel -->
@@ -741,9 +731,18 @@
         <span class="toggle-slider"></span>
       </label>
     </div>
+    <div class="setting-item">
+      <div>
+        <span class="setting-label">Flowers</span>
+        <span class="setting-desc">Decorative colored specks</span>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleFlowers" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
   </div>
 
-  <!-- Charts panel -->
   <div class="charts-panel visible" id="chartsPanel">
     <div class="chart-actions">
       <button class="chart-action-btn" id="settingsBtn" title="Settings">⚙</button>
@@ -763,7 +762,6 @@
     </div>
   </div>
 
-  <!-- Controls panel -->
   <div class="controls-panel panel">
     <h2>Population Parameters</h2>
     <div class="param-group">
@@ -808,7 +806,6 @@
     </div>
   </div>
 
-  <!-- Speed panel -->
   <div class="speed-panel panel">
     <div class="speed-label">
       <span>Simulation Speed</span>
@@ -826,18 +823,23 @@
   let r = 1.2;
   let K = 600;
 
+  // Simulation speed: how many "time units" pass per animation frame.
+  // The slider sets a multiplier; BASE_DT is the time step at speed = 1.
   let speedFactor = 8;
-  const BASE_SPEED = 0.02;
+  const BASE_DT = 0.0025;   // time advance per frame at speed 1
 
   // ---------- settings ----------
   const settings = {
     naturalDisasters: false,
     showLakes: true,
     showTrees: true,
-    showRocks: true
+    showRocks: true,
+    showFlowers: true
   };
 
-  // Natural disaster scheduler
+  // Natural disaster scheduling: minimum gap between disasters (in time units)
+  const NATURAL_DISASTER_MIN_GAP = 40;
+  const NATURAL_DISASTER_MAX_GAP = 80;
   let nextDisasterTime = Infinity;
 
   // ---------- simulation state ----------
@@ -978,7 +980,7 @@
     mctx.fillRect(0, 0, worldWidth, worldHeight);
     mctx.fillStyle = '#ffffff';
 
-    // --- Lakes (only if enabled) ---
+    // --- Lakes ---
     const lakes = [];
     if (settings.showLakes) {
       const [minL, maxL] = biomeData.numLakes;
@@ -1042,7 +1044,7 @@
     terrain.waterMask = mask;
     terrain.waterCtx = mctx;
 
-    // --- Trees (only if enabled) ---
+    // --- Trees ---
     const trees = [];
     if (settings.showTrees) {
       let attempts = 0;
@@ -1068,7 +1070,7 @@
     }
     terrain.features.trees = trees;
 
-    // --- Shrubs (part of Trees & Shrubs setting) ---
+    // --- Shrubs ---
     const shrubs = [];
     if (settings.showTrees) {
       for (let i = 0; i < biomeData.shrubCount; i++) {
@@ -1085,7 +1087,7 @@
     }
     terrain.features.shrubs = shrubs;
 
-    // --- Rocks (only if enabled) ---
+    // --- Rocks ---
     const rocks = [];
     if (settings.showRocks) {
       for (let i = 0; i < biomeData.rockCount; i++) {
@@ -1103,18 +1105,20 @@
     }
     terrain.features.rocks = rocks;
 
-    // --- Flowers (always present, but subtle) ---
+    // --- Flowers (now respect the toggle) ---
     const flowers = [];
-    for (let i = 0; i < biomeData.flowerCount; i++) {
-      const x = Math.random() * worldWidth;
-      const y = Math.random() * worldHeight;
-      if (isWater(x, y)) continue;
-      if (y < 70) continue;
-      flowers.push({
-        x, y,
-        color: biomeData.flowerColors[Math.floor(Math.random() * biomeData.flowerColors.length)],
-        size: 2 + Math.random() * 2
-      });
+    if (settings.showFlowers) {
+      for (let i = 0; i < biomeData.flowerCount; i++) {
+        const x = Math.random() * worldWidth;
+        const y = Math.random() * worldHeight;
+        if (isWater(x, y)) continue;
+        if (y < 70) continue;
+        flowers.push({
+          x, y,
+          color: biomeData.flowerColors[Math.floor(Math.random() * biomeData.flowerColors.length)],
+          size: 2 + Math.random() * 2
+        });
+      }
     }
     terrain.features.flowers = flowers;
 
@@ -1456,7 +1460,6 @@
       document.getElementById('goBtn').classList.remove('running');
       document.getElementById('goBtn').textContent = 'Go';
 
-      // Populate extinction card
       document.getElementById('extSurvivedTime').textContent = currentTime.toFixed(2) + ' t';
       document.getElementById('extHalfTime').textContent =
         timeToHalfK !== null ? timeToHalfK.toFixed(2) + ' t' : 'never reached';
@@ -1546,13 +1549,15 @@
   }
 
   // ---------- natural disaster scheduling ----------
+  // Now uses a much larger gap so disasters are rare, not frequent.
   function scheduleNextNaturalDisaster() {
     if (!settings.naturalDisasters) {
       nextDisasterTime = Infinity;
       return;
     }
-    // Random interval: 5–15 time units
-    nextDisasterTime = currentTime + 5 + Math.random() * 10;
+    const gap = NATURAL_DISASTER_MIN_GAP +
+      Math.random() * (NATURAL_DISASTER_MAX_GAP - NATURAL_DISASTER_MIN_GAP);
+    nextDisasterTime = currentTime + gap;
   }
 
   function checkNaturalDisaster() {
@@ -1568,7 +1573,10 @@
   // ---------- animation ----------
   function stepSimulation() {
     if (!isRunning || isExtinct) return;
-    const dt = BASE_SPEED * speedFactor;
+
+    // The simulation speed slider directly controls how much time
+    // advances per frame. At speed 1, dt is tiny; at speed 20, dt is 20x larger.
+    const dt = BASE_DT * speedFactor;
     currentTime += dt;
 
     clearOldDying();
@@ -1744,7 +1752,6 @@
     if (population >= K / 2) timeToHalfK = 0;
     if (population >= 0.9 * K) timeToNinetyK = 0;
 
-    // Schedule first natural disaster
     scheduleNextNaturalDisaster();
 
     drawWorld();
@@ -1820,6 +1827,8 @@
       restartSimulation();
     });
 
+    // Speed slider: updates speedFactor directly. No restart needed —
+    // the next frame will use the new value.
     speedSlider.addEventListener('input', (e) => {
       speedFactor = parseFloat(e.target.value);
       document.getElementById('speedValue').textContent = speedFactor;
@@ -1866,8 +1875,8 @@
     document.getElementById('toggleDisasters').addEventListener('change', (e) => {
       settings.naturalDisasters = e.target.checked;
       if (settings.naturalDisasters) {
-        // Schedule first one soon
-        nextDisasterTime = currentTime + 3 + Math.random() * 5;
+        // First one comes fairly soon, then long gaps afterwards
+        nextDisasterTime = currentTime + 8 + Math.random() * 10;
       } else {
         nextDisasterTime = Infinity;
       }
@@ -1887,6 +1896,12 @@
 
     document.getElementById('toggleRocks').addEventListener('change', (e) => {
       settings.showRocks = e.target.checked;
+      generateTerrain();
+      drawWorld();
+    });
+
+    document.getElementById('toggleFlowers').addEventListener('change', (e) => {
+      settings.showFlowers = e.target.checked;
       generateTerrain();
       drawWorld();
     });
