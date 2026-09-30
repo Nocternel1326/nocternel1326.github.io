@@ -56,19 +56,6 @@
       pointer-events: auto;
     }
 
-    .sandbox-header .tick-info {
-      font-family: 'SF Mono', monospace;
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #3a3020;
-      background: rgba(255, 248, 224, 0.85);
-      padding: 0.35rem 0.9rem;
-      border-radius: 20px;
-      border: 2px solid #c8b87a;
-      box-shadow: 0 2px 6px rgba(120, 100, 40, 0.2);
-      pointer-events: auto;
-    }
-
     .world-container {
       flex: 1;
       width: 100%;
@@ -214,7 +201,7 @@
       box-shadow: 0 1px 4px rgba(80, 60, 20, 0.5); cursor: pointer;
     }
 
-    /* ---- Top-right: charts (scalable) ---- */
+    /* ---- Top-right: charts ---- */
     .charts-panel {
       position: absolute;
       top: 1rem;
@@ -238,7 +225,6 @@
       box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.45);
       border: 2px solid #d4c48a;
       backdrop-filter: blur(4px);
-      transition: all 0.2s ease;
     }
     .chart-card .chart-title {
       display: flex; justify-content: space-between;
@@ -258,7 +244,6 @@
       max-height: 180px;
     }
 
-    /* Toggle button for charts */
     .chart-toggle {
       position: absolute;
       top: 1rem;
@@ -285,7 +270,6 @@
       transform: scale(1.05);
     }
 
-    /* When charts are visible, toggle sits at top of charts panel */
     .charts-panel.visible .chart-toggle {
       position: relative;
       top: auto;
@@ -294,12 +278,12 @@
       margin-bottom: 0.3rem;
     }
 
-    /* ---- Statistics panel (top-left) ---- */
+    /* ---- Statistics panel (top-left, unified) ---- */
     .stats-panel {
       position: absolute;
       top: 3.4rem;
       left: 1rem;
-      width: 290px;
+      width: 300px;
       background: rgba(255, 253, 240, 0.96);
       border-radius: 12px;
       padding: 0.75rem 1rem 0.9rem 1rem;
@@ -320,6 +304,22 @@
       text-transform: uppercase;
       border-bottom: 1px dashed #c8b87a;
       padding-bottom: 0.3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stats-panel h3 .tick-mini {
+      font-family: 'SF Mono', monospace;
+      font-size: 0.72rem;
+      background: #fff8e0;
+      padding: 0.1rem 0.55rem;
+      border-radius: 30px;
+      border: 1px solid #c8b87a;
+      color: #3a3020;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0;
     }
 
     .stat-row {
@@ -352,10 +352,10 @@
       color: #0a5a0a;
       border-color: #8ab86a;
     }
-    .stat-row .stat-value.warn {
-      background: #f0e0c0;
-      color: #8a5a0a;
-      border-color: #c8a86a;
+    .stat-row .stat-value.big {
+      background: #c8e0f0;
+      color: #0a3a5a;
+      border-color: #6aa0c8;
     }
 
     /* Legend */
@@ -410,7 +410,7 @@
     @media (max-width: 1100px) {
       .charts-panel { width: 280px; }
       .charts-panel.expanded { width: 480px; }
-      .stats-panel { width: 250px; }
+      .stats-panel { width: 260px; }
     }
     @media (max-width: 850px) {
       .charts-panel { display: none; }
@@ -424,8 +424,7 @@
   <!-- Main sandbox -->
   <div class="sandbox">
     <div class="sandbox-header">
-      <h1>🌿 Logistic Growth · Real Population Simulation</h1>
-      <div class="tick-info" id="tickDisplay">t = 0.00  |  N = 10</div>
+      <h1>🌿 Logistic Growth · Population in a Living Landscape</h1>
     </div>
     <div class="world-container">
       <canvas id="worldCanvas" class="world-canvas"></canvas>
@@ -439,20 +438,16 @@
     <div class="legend-item"><span class="legend-x"></span> Died</div>
   </div>
 
-  <!-- Statistics panel -->
+  <!-- Statistics panel (unified with tick info) -->
   <div class="stats-panel">
-    <h3>📊 Statistics</h3>
+    <h3>📊 Statistics <span class="tick-mini" id="tickDisplay">t = 0.00 | N = 10</span></h3>
     <div class="stat-row">
-      <span class="stat-label">Current Population</span>
-      <span class="stat-value" id="statPop">10</span>
+      <span class="stat-label">Population / K</span>
+      <span class="stat-value big" id="statRatio">1.7%</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">Carrying Capacity (K)</span>
       <span class="stat-value" id="statK">600</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">Population / K</span>
-      <span class="stat-value" id="statRatio">1.7%</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">Time to reach K/2</span>
@@ -484,7 +479,7 @@
     </div>
   </div>
 
-  <!-- Charts (top-right, scalable) -->
+  <!-- Charts -->
   <div class="charts-panel visible" id="chartsPanel">
     <button class="chart-toggle" id="chartToggle" title="Toggle chart size">⤢</button>
     <div class="chart-card">
@@ -501,7 +496,7 @@
     </div>
   </div>
 
-  <!-- Controls (bottom-left) -->
+  <!-- Controls -->
   <div class="controls-panel">
     <h2>Population Parameters</h2>
     <div class="param-group">
@@ -545,7 +540,7 @@
     </div>
   </div>
 
-  <!-- Speed (bottom-right) -->
+  <!-- Speed -->
   <div class="speed-panel">
     <div class="speed-label">
       <span>Simulation Speed</span>
@@ -570,21 +565,16 @@
   let currentTime = 0;
   let isRunning = false;
   let animationFrame = null;
-  const T_MAX = 30;
 
   let population = 10;
-
-  // Running totals
   let totalBirths = 0;
   let totalDeaths = 0;
 
-  // Time tracking for statistics
-  let timeToHalfK = null;   // time when N first reached K/2
-  let timeToNinetyK = null; // time when N first reached 0.9*K
+  let timeToHalfK = null;
+  let timeToNinetyK = null;
   let currentGrowthRate = 0;
   let currentPerCapita = 0;
 
-  // History for charts
   const historyTimes = [];
   const historyPops = [];
   const historyGrowth = [];
@@ -595,29 +585,219 @@
   const ctx = canvas.getContext('2d');
   let worldWidth = 500, worldHeight = 300;
 
+  // Terrain features (generated once per canvas resize)
+  let terrainFeatures = {
+    lake: null,
+    river: null,
+    mountains: [],
+    trees: []
+  };
+
+  function generateTerrain() {
+    // Lake: a big rounded blob in the lower-right region
+    const lakeCX = worldWidth * 0.78;
+    const lakeCY = worldHeight * 0.75;
+    const lakeRX = Math.min(worldWidth, worldHeight) * 0.18;
+    const lakeRY = lakeRX * 0.72;
+    terrainFeatures.lake = { cx: lakeCX, cy: lakeCY, rx: lakeRX, ry: lakeRY };
+
+    // River: a winding path from top-left-ish to the lake
+    const riverPoints = [];
+    const startX = worldWidth * 0.05;
+    const startY = worldHeight * 0.1;
+    const endX = lakeCX - lakeRX * 0.4;
+    const endY = lakeCY - lakeRY * 0.4;
+    const steps = 16;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      // Base line
+      let x = startX + (endX - startX) * t;
+      let y = startY + (endY - startY) * t;
+      // Wavy sine offsets
+      const wave = Math.sin(t * Math.PI * 3) * 40 * (1 - t * 0.5);
+      x += wave * 0.7;
+      y += Math.cos(t * Math.PI * 2.5) * 25 * (1 - t * 0.3);
+      riverPoints.push({ x, y });
+    }
+    terrainFeatures.river = riverPoints;
+
+    // Mountains: several triangular peaks along the top edge
+    terrainFeatures.mountains = [];
+    const numMountains = 5;
+    for (let i = 0; i < numMountains; i++) {
+      const baseX = worldWidth * (0.1 + 0.7 * (i / (numMountains - 1)));
+      const baseW = 70 + Math.random() * 50;
+      const height = 45 + Math.random() * 40;
+      terrainFeatures.mountains.push({
+        x: baseX,
+        w: baseW,
+        h: height,
+        snow: Math.random() > 0.5
+      });
+    }
+
+    // Trees: scattered in the left/upper region (avoid lake & river)
+    terrainFeatures.trees = [];
+    const numTrees = 30;
+    for (let i = 0; i < numTrees; i++) {
+      const x = Math.random() * worldWidth;
+      const y = Math.random() * worldHeight * 0.85;
+      // Avoid lake
+      const dl = Math.hypot((x - lakeCX) / lakeRX, (y - lakeCY) / lakeRY);
+      if (dl < 1.2) continue;
+      // Avoid river (rough check)
+      let nearRiver = false;
+      for (let p of riverPoints) {
+        if (Math.hypot(x - p.x, y - p.y) < 30) { nearRiver = true; break; }
+      }
+      if (nearRiver) continue;
+      // Avoid mountains (top strip)
+      if (y < 70) continue;
+      terrainFeatures.trees.push({
+        x, y,
+        size: 8 + Math.random() * 8,
+        color: Math.random() > 0.5 ? '#3a7a3a' : '#2f6a2f'
+      });
+    }
+  }
+
   function resizeCanvas() {
     const rect = canvas.parentElement.getBoundingClientRect();
     worldWidth = Math.floor(rect.width);
     worldHeight = Math.floor(rect.height);
     canvas.width = worldWidth;
     canvas.height = worldHeight;
+    generateTerrain();
     drawWorld();
   }
 
+  // ---------- terrain drawing ----------
+  function drawTerrain() {
+    // Base grass gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, worldHeight);
+    grad.addColorStop(0, '#eef5c8');
+    grad.addColorStop(0.5, '#e2eeb0');
+    grad.addColorStop(1, '#d6e6a0');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, worldWidth, worldHeight);
+
+    // Mountains along the top
+    for (let m of terrainFeatures.mountains) {
+      const left = m.x - m.w / 2;
+      const right = m.x + m.w / 2;
+      const baseY = 80;
+      const peakY = baseY - m.h;
+
+      // Mountain body
+      ctx.beginPath();
+      ctx.moveTo(left, baseY);
+      ctx.lineTo(m.x, peakY);
+      ctx.lineTo(right, baseY);
+      ctx.closePath();
+      ctx.fillStyle = '#9a8868';
+      ctx.fill();
+
+      // Shading on right side
+      ctx.beginPath();
+      ctx.moveTo(m.x, peakY);
+      ctx.lineTo(right, baseY);
+      ctx.lineTo(m.x, baseY);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(80, 65, 45, 0.25)';
+      ctx.fill();
+
+      // Snow cap
+      if (m.snow) {
+        ctx.beginPath();
+        ctx.moveTo(m.x - m.w * 0.18, peakY + m.h * 0.3);
+        ctx.lineTo(m.x, peakY);
+        ctx.lineTo(m.x + m.w * 0.18, peakY + m.h * 0.3);
+        ctx.closePath();
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
+    }
+
+    // River (winding)
+    if (terrainFeatures.river && terrainFeatures.river.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(terrainFeatures.river[0].x, terrainFeatures.river[0].y);
+      for (let i = 1; i < terrainFeatures.river.length; i++) {
+        const p = terrainFeatures.river[i];
+        const prev = terrainFeatures.river[i - 1];
+        // Smooth curve using midpoint quadratic
+        const mx = (prev.x + p.x) / 2;
+        const my = (prev.y + p.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+      }
+      ctx.lineWidth = 16;
+      ctx.strokeStyle = '#7ab8d8';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // River highlight
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = '#a8d4ea';
+      ctx.stroke();
+    }
+
+    // Lake
+    const lake = terrainFeatures.lake;
+    if (lake) {
+      ctx.beginPath();
+      ctx.ellipse(lake.cx, lake.cy, lake.rx, lake.ry, 0, 0, 2 * Math.PI);
+      const lakeGrad = ctx.createRadialGradient(
+        lake.cx, lake.cy, 2,
+        lake.cx, lake.cy, Math.max(lake.rx, lake.ry)
+      );
+      lakeGrad.addColorStop(0, '#a8d4ea');
+      lakeGrad.addColorStop(1, '#5a9ec0');
+      ctx.fillStyle = lakeGrad;
+      ctx.fill();
+
+      // Lake outline
+      ctx.strokeStyle = '#3a7a9a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Trees (small triangular pines)
+    for (let t of terrainFeatures.trees) {
+      // Trunk
+      ctx.fillStyle = '#5a3a1a';
+      ctx.fillRect(t.x - 1.5, t.y + t.size * 0.4, 3, t.size * 0.5);
+      // Foliage (two triangles)
+      ctx.fillStyle = t.color;
+      ctx.beginPath();
+      ctx.moveTo(t.x, t.y - t.size * 0.6);
+      ctx.lineTo(t.x - t.size * 0.5, t.y + t.size * 0.25);
+      ctx.lineTo(t.x + t.size * 0.5, t.y + t.size * 0.25);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(t.x, t.y - t.size * 0.1);
+      ctx.lineTo(t.x - t.size * 0.4, t.y + t.size * 0.55);
+      ctx.lineTo(t.x + t.size * 0.4, t.y + t.size * 0.55);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  // ---------- agents ----------
   let agents = [];
 
-  // ---------- drawing ----------
   function drawWorld() {
-    ctx.fillStyle = '#fdf8e0';
-    ctx.fillRect(0, 0, worldWidth, worldHeight);
+    drawTerrain();
 
     const baseRadius = Math.max(1.2, Math.min(2.0, worldWidth / 500));
 
     for (let a of agents) {
       if (a.state === 'dying') {
         ctx.strokeStyle = '#cc2222';
-        ctx.lineWidth = 2.2;
-        const s = baseRadius + 2.0;
+        ctx.lineWidth = 2.4;
+        const s = baseRadius + 2.2;
         ctx.beginPath();
         ctx.moveTo(a.x - s, a.y - s);
         ctx.lineTo(a.x + s, a.y + s);
@@ -627,8 +807,14 @@
       } else if (a.state === 'born') {
         ctx.fillStyle = '#22aa22';
         ctx.beginPath();
-        ctx.arc(a.x, a.y, baseRadius + 1.1, 0, 2 * Math.PI);
+        ctx.arc(a.x, a.y, baseRadius + 1.2, 0, 2 * Math.PI);
         ctx.fill();
+        // Tiny glow
+        ctx.strokeStyle = 'rgba(34, 170, 34, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, baseRadius + 2.6, 0, 2 * Math.PI);
+        ctx.stroke();
       } else {
         ctx.fillStyle = '#111111';
         ctx.beginPath();
@@ -638,7 +824,6 @@
     }
   }
 
-  // ---------- population -> dots (scaled) ----------
   function popToDots(pop) {
     const MAX_VISIBLE = 1500;
     return Math.min(MAX_VISIBLE, Math.max(0, Math.round(pop)));
@@ -689,7 +874,7 @@
     }
   }
 
-  // ---------- ONE simulation tick ----------
+  // ---------- tick ----------
   function tick(dt) {
     const N = population;
     if (N <= 0) return { births: 0, deaths: 0 };
@@ -708,11 +893,9 @@
     population = N + births - deaths;
     if (population < 0) population = 0;
 
-    // Track totals
     totalBirths += births;
     totalDeaths += deaths;
 
-    // Track statistics thresholds
     if (timeToHalfK === null && population >= K / 2) {
       timeToHalfK = currentTime;
     }
@@ -720,11 +903,9 @@
       timeToNinetyK = currentTime;
     }
 
-    // Current instantaneous rates
     currentGrowthRate = births - deaths;
     currentPerCapita = N > 0 ? currentGrowthRate / N : 0;
 
-    // Record history
     historyTimes.push(currentTime);
     historyPops.push(population);
     historyGrowth.push({ N: N, rate: currentGrowthRate });
@@ -733,19 +914,14 @@
     return { births, deaths };
   }
 
-  // ---------- main animation step ----------
+  // ---------- animation ----------
   function stepSimulation() {
     if (!isRunning) return;
 
     const dt = BASE_SPEED * speedFactor;
     currentTime += dt;
 
-    if (currentTime >= T_MAX) {
-      currentTime = T_MAX;
-      isRunning = false;
-      document.getElementById('goBtn').classList.remove('running');
-      document.getElementById('goBtn').textContent = 'Go';
-    }
+    // NOTE: No T_MAX cap — simulation runs indefinitely
 
     clearOldDying();
     const { births, deaths } = tick(dt);
@@ -757,7 +933,7 @@
     updateCharts();
 
     document.getElementById('tickDisplay').textContent =
-      `t = ${currentTime.toFixed(2)}  |  N = ${population}`;
+      `t = ${currentTime.toFixed(2)} | N = ${population}`;
     document.getElementById('birthsDisplay').textContent = births;
     document.getElementById('deathsDisplay').textContent = deaths;
 
@@ -768,9 +944,8 @@
     }
   }
 
-  // ---------- statistics panel ----------
+  // ---------- statistics ----------
   function updateStats() {
-    document.getElementById('statPop').textContent = population;
     document.getElementById('statK').textContent = K;
     const ratio = (population / K * 100).toFixed(1);
     document.getElementById('statRatio').textContent = ratio + '%';
@@ -795,25 +970,48 @@
   let chartSize, chartGrowth, chartPerCapita;
 
   function updateCharts() {
-    // Population Size vs Time
-    chartSize.data.labels = historyTimes.map(t => t.toFixed(2));
-    chartSize.data.datasets[0].data = historyPops;
-    const maxPop = Math.max(K * 1.05, population, ...historyPops, 10);
+    // Cap number of displayed points for performance on long runs
+    const MAX_POINTS = 800;
+    let times = historyTimes;
+    let pops = historyPops;
+    let growth = historyGrowth;
+    let perCap = historyPerCapita;
+
+    if (historyTimes.length > MAX_POINTS) {
+      const stride = Math.ceil(historyTimes.length / MAX_POINTS);
+      times = []; pops = []; growth = []; perCap = [];
+      for (let i = 0; i < historyTimes.length; i += stride) {
+        times.push(historyTimes[i]);
+        pops.push(historyPops[i]);
+        growth.push(historyGrowth[i]);
+        perCap.push(historyPerCapita[i]);
+      }
+      // Always include the last point
+      const lastIdx = historyTimes.length - 1;
+      if (times[times.length - 1] !== historyTimes[lastIdx]) {
+        times.push(historyTimes[lastIdx]);
+        pops.push(historyPops[lastIdx]);
+        growth.push(historyGrowth[lastIdx]);
+        perCap.push(historyPerCapita[lastIdx]);
+      }
+    }
+
+    chartSize.data.labels = times.map(t => t.toFixed(2));
+    chartSize.data.datasets[0].data = pops;
+    const maxPop = Math.max(K * 1.05, population, ...pops, 10);
     chartSize.options.scales.y.max = Math.ceil(maxPop / 50) * 50;
     chartSize.update('none');
 
-    // Growth Rate vs N
-    chartGrowth.data.labels = historyGrowth.map(h => h.N.toFixed(1));
-    chartGrowth.data.datasets[0].data = historyGrowth.map(h => h.rate);
-    const maxG = Math.max(...historyGrowth.map(h => Math.abs(h.rate)), 10);
+    chartGrowth.data.labels = growth.map(h => h.N.toFixed(1));
+    chartGrowth.data.datasets[0].data = growth.map(h => h.rate);
+    const maxG = Math.max(...growth.map(h => Math.abs(h.rate)), 10);
     chartGrowth.options.scales.y.max = Math.ceil(maxG * 1.2);
     chartGrowth.options.scales.y.min = -Math.ceil(maxG * 0.2);
     chartGrowth.update('none');
 
-    // Per Capita Growth Rate vs N
-    chartPerCapita.data.labels = historyPerCapita.map(h => h.N.toFixed(1));
-    chartPerCapita.data.datasets[0].data = historyPerCapita.map(h => h.rate);
-    const maxPC = Math.max(...historyPerCapita.map(h => Math.abs(h.rate)), 1);
+    chartPerCapita.data.labels = perCap.map(h => h.N.toFixed(1));
+    chartPerCapita.data.datasets[0].data = perCap.map(h => h.rate);
+    const maxPC = Math.max(...perCap.map(h => Math.abs(h.rate)), 1);
     chartPerCapita.options.scales.y.max = Math.ceil(maxPC * 1.2 * 10) / 10;
     chartPerCapita.options.scales.y.min = -Math.ceil(maxPC * 0.2 * 10) / 10;
     chartPerCapita.update('none');
@@ -895,7 +1093,7 @@
     timeToHalfK = null;
     timeToNinetyK = null;
     currentGrowthRate = 0;
-    currentPerCapita = r; // initial per-capita when N is small
+    currentPerCapita = r;
 
     historyTimes.length = 0;
     historyPops.length = 0;
@@ -908,13 +1106,11 @@
       agents.push(spawnAgent('normal'));
     }
 
-    // Record initial state
     historyTimes.push(0);
     historyPops.push(population);
     historyGrowth.push({ N: population, rate: 0 });
     historyPerCapita.push({ N: population, rate: r });
 
-    // Check if initial pop already past thresholds
     if (population >= K / 2) timeToHalfK = 0;
     if (population >= 0.9 * K) timeToNinetyK = 0;
 
@@ -923,7 +1119,7 @@
     updateCharts();
 
     document.getElementById('tickDisplay').textContent =
-      `t = 0.00  |  N = ${population}`;
+      `t = 0.00 | N = ${population}`;
     document.getElementById('birthsDisplay').textContent = '0';
     document.getElementById('deathsDisplay').textContent = '0';
   }
@@ -940,9 +1136,6 @@
       goBtn.classList.remove('running');
       goBtn.textContent = 'Go';
     } else {
-      if (currentTime >= T_MAX) {
-        resetSimulation();
-      }
       isRunning = true;
       goBtn.classList.add('running');
       goBtn.textContent = 'Pause';
@@ -997,14 +1190,13 @@
     n0Slider.max = maxN0;
   }
 
-  // ---------- chart panel toggle ----------
+  // ---------- chart toggle ----------
   function bindChartToggle() {
     const toggleBtn = document.getElementById('chartToggle');
     const panel = document.getElementById('chartsPanel');
     toggleBtn.addEventListener('click', () => {
       panel.classList.toggle('expanded');
       toggleBtn.textContent = panel.classList.contains('expanded') ? '⤡' : '⤢';
-      // Small delay then update charts to fit new size
       setTimeout(() => {
         if (chartSize) chartSize.resize();
         if (chartGrowth) chartGrowth.resize();
