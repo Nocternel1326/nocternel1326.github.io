@@ -22,7 +22,7 @@
       padding: 1.5rem;
     }
 
-    /* main panel – dark UI like NetLogo */
+    /* main panel – dark UI */
     .netlogo-panel {
       background: #2e353d;
       border-radius: 1.5rem;
@@ -47,41 +47,12 @@
       gap: 0.75rem;
     }
 
-    .logo-badge {
-      background: #1e6f9f;
-      padding: 0.2rem 1rem 0.2rem 0.8rem;
-      border-radius: 40px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: white;
-      letter-spacing: 0.3px;
-      box-shadow: inset 0 1px 3px rgba(255,255,255,0.2);
-    }
-
     .title-section h1 {
       font-size: 1.5rem;
       font-weight: 500;
       margin: 0;
       color: #f0f5fa;
       letter-spacing: 0.2px;
-    }
-
-    .export-buttons {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .export-btn {
-      background: #3f4a56;
-      border: none;
-      color: #d3dee8;
-      padding: 0.2rem 1rem;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: default;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-      border: 1px solid #5b6773;
     }
 
     /* speed slider row */
@@ -122,13 +93,13 @@
       justify-content: center;
     }
 
-    /* NetLogo world – black background with agents */
+    /* Light yellow world background with black dots */
     .world-container {
-      background: #000;
+      background: #fdf8e0;
       border-radius: 12px;
       padding: 6px;
-      box-shadow: inset 0 0 20px #000, 0 8px 12px rgba(0,0,0,0.6);
-      border: 1px solid #5c6a78;
+      box-shadow: inset 0 0 12px #d4cba6, 0 8px 12px rgba(0,0,0,0.6);
+      border: 1px solid #b8a87a;
     }
 
     .world-canvas {
@@ -136,7 +107,7 @@
       width: 500px;
       height: 300px;
       border-radius: 6px;
-      background: #000;
+      background: #fdf8e0;
     }
 
     .tick-label {
@@ -147,7 +118,7 @@
       padding-left: 6px;
     }
 
-    /* right side parameters – NetLogo style */
+    /* right side parameters */
     .params-panel {
       background: #2b333b;
       border-radius: 12px;
@@ -249,7 +220,7 @@
       color: #1e3300;
     }
 
-    /* buttons */
+    /* buttons – now clickable */
     .button-row {
       display: flex;
       gap: 1rem;
@@ -267,9 +238,14 @@
       border-radius: 20px;
       letter-spacing: 0.3px;
       box-shadow: 0 4px 0 #1e2d3a, 0 5px 12px black;
-      cursor: default;
-      transition: none;
+      cursor: pointer;
+      transition: all 0.08s ease;
       border: 1px solid #6b8fb0;
+    }
+
+    .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1e2d3a, 0 5px 12px black;
     }
 
     .btn-setup {
@@ -278,6 +254,11 @@
 
     .btn-go {
       background: #3d7ea6;
+    }
+
+    .btn-go.running {
+      background: #b33a3a;
+      border-color: #d46b6b;
     }
 
     /* three charts row */
@@ -319,45 +300,14 @@
       height: 140px !important;
       max-height: 140px;
     }
-
-    /* command center strip */
-    .command-center {
-      margin-top: 1.5rem;
-      background: #b7c4d9;
-      border-radius: 40px;
-      padding: 0.7rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: #1b2b3a;
-      font-weight: 600;
-      box-shadow: inset 0 2px 8px #ffffffb0, 0 6px 10px black;
-      border: 1px solid #e3edff;
-    }
-
-    .command-center span:first-child {
-      font-size: 1rem;
-      letter-spacing: 0.3px;
-    }
-
-    /* utility */
-    .text-small {
-      font-size: 0.75rem;
-      color: #98a9bb;
-    }
   </style>
 </head>
 <body>
 <div class="netlogo-panel">
-  <!-- header -->
+  <!-- header (branding removed) -->
   <div class="header">
     <div class="title-section">
-      <div class="logo-badge">powered by NetLogo</div>
       <h1>Logistic_Growth</h1>
-    </div>
-    <div class="export-buttons">
-      <button class="export-btn" disabled>Export: NetLogo</button>
-      <button class="export-btn" disabled>HTML</button>
     </div>
   </div>
 
@@ -407,7 +357,7 @@
         </div>
       </div>
 
-      <!-- Births / Deaths (static but shown) -->
+      <!-- Births / Deaths -->
       <div class="birth-death-row">
         <div class="bd-box">
           <div class="bd-label">Births</div>
@@ -421,8 +371,8 @@
 
       <!-- Setup / Go buttons -->
       <div class="button-row">
-        <button class="btn btn-setup" id="setupBtn" disabled>Setup</button>
-        <button class="btn btn-go" id="goBtn" disabled>Go</button>
+        <button class="btn btn-setup" id="setupBtn">Setup</button>
+        <button class="btn btn-go" id="goBtn">Go</button>
       </div>
     </div>
   </div>
@@ -454,12 +404,6 @@
       <canvas id="perCapitaChart" width="240" height="140"></canvas>
     </div>
   </div>
-
-  <!-- command center strip -->
-  <div class="command-center">
-    <span>Command Center</span>
-    <span>▼</span>
-  </div>
 </div>
 
 <script>
@@ -469,26 +413,27 @@
     let r = 1.2;          // intrinsic growth rate
     let K = 600;          // carrying capacity
 
-    // derived stats (used for births/deaths display only)
-    function updateBirthDeathLabels() {
-      // mimic NetLogo style: births ~ r * N (initial) / 10? Just for visual consistency
-      const approxBirths = Math.round(r * N0 * 0.6);
-      const approxDeaths = Math.round(r * N0 * 0.1);
-      document.getElementById('birthsDisplay').textContent = Math.min(approxBirths, 20);
-      document.getElementById('deathsDisplay').textContent = Math.max(1, Math.min(approxDeaths, 10));
-    }
+    // current simulation time (for the running animation)
+    let currentTime = 0;
+    let isRunning = false;
+    let animationFrame = null;
+    const TIME_SPEED = 0.08;   // how fast time advances per frame
+
+    // precomputed full logistic curve for all times
+    let fullTimes = [];
+    let fullPops = [];
 
     // ---------- world canvas (agent dots) ----------
     const canvas = document.getElementById('worldCanvas');
     const ctx = canvas.getContext('2d');
     const worldWidth = 500, worldHeight = 300;
 
-    // agent representation: store positions for current population
-    let agents = [];        // array of {x, y}
+    // agents array (positions)
+    let agents = [];
 
-    // ---- logistic curve helper (RK4 for smoothness, same as previous) ----
-    const T_MAX = 30;       // time range for charts
-    const STEPS = 200;
+    // ---- logistic curve helper (RK4) ----
+    const T_MAX = 30;
+    const STEPS = 300;
     const DT = T_MAX / STEPS;
 
     function computeLogisticCurve(rVal, KVal, N0Val) {
@@ -499,7 +444,7 @@
         const t = i * DT;
         times.push(t);
         pops.push(N);
-        // RK4 step for dN/dt = r * N * (1 - N/K)
+        // RK4 step
         const f = (n) => rVal * n * (1 - n / KVal);
         const k1 = f(N);
         const k2 = f(N + 0.5 * DT * k1);
@@ -512,72 +457,88 @@
       return { times, pops };
     }
 
-    // ---- draw agents on canvas ----
-    function drawAgents() {
-      ctx.clearRect(0, 0, worldWidth, worldHeight);
-      // dark background
-      ctx.fillStyle = '#000000';
+    // ---- draw agents (tiny black dots on light yellow) ----
+    function drawAgents(population) {
+      // clear with light yellow
+      ctx.fillStyle = '#fdf8e0';
       ctx.fillRect(0, 0, worldWidth, worldHeight);
 
-      // draw each agent as a small red dot (like NetLogo "red" turtles)
-      ctx.shadowColor = '#ff8888';
-      ctx.shadowBlur = 6;
-      for (let a of agents) {
-        // random-ish but smooth flicker: slight color variation
-        ctx.beginPath();
-        ctx.arc(a.x, a.y, 3.2, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ff3a3a';
-        ctx.fill();
-        // tiny highlight
-        ctx.shadowBlur = 4;
-      }
-      ctx.shadowBlur = 0;
-      // add a subtle grid or nothing – NetLogo world is plain black
-    }
-
-    // ---- generate agents from population size (scaled for visual clarity) ----
-    // The world is 500x300, we want up to ~300 dots to be visible but not overcrowded.
-    // We'll map population N (0..K) to a number of dots between 0 and 300.
-    function updateAgentsFromPopulation(population) {
-      // scaling: at K=600, show max 280 dots (so it's not too dense)
-      const maxDots = 280;
-      const targetDots = Math.min(maxDots, Math.round((population / K) * maxDots * 1.3)); // slight boost
+      // Determine how many dots to draw based on population
+      // Scale: map population 0..K to 0..maxDots
+      const maxDots = 350;
+      const targetDots = Math.min(maxDots, Math.round((population / Math.max(K, 1)) * maxDots));
       const currentDots = agents.length;
+
+      // Adjust agents array
       if (targetDots > currentDots) {
-        // add dots
         for (let i = currentDots; i < targetDots; i++) {
           agents.push({
-            x: Math.random() * (worldWidth - 12) + 6,
-            y: Math.random() * (worldHeight - 12) + 6
+            x: Math.random() * (worldWidth - 6) + 3,
+            y: Math.random() * (worldHeight - 6) + 3
           });
         }
       } else if (targetDots < currentDots) {
-        // remove dots (prefer removing from the end)
         agents.splice(targetDots, currentDots - targetDots);
       }
-      // if population is very low, clear
-      if (population < 1) agents = [];
-      drawAgents();
+
+      // Draw tiny black dots
+      ctx.fillStyle = '#111111';
+      for (let a of agents) {
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, 1.8, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
 
-    // ---- update all UI: charts, agents, tick display, birth/death ----
+    // ---- get population at a given simulation time ----
+    function getPopulationAtTime(t) {
+      if (fullTimes.length === 0) return N0;
+      // clamp t to [0, T_MAX]
+      const clampedT = Math.min(Math.max(t, 0), T_MAX);
+      // find closest index (simple linear search, fine for 300 steps)
+      let idx = 0;
+      for (let i = 0; i < fullTimes.length; i++) {
+        if (fullTimes[i] >= clampedT) {
+          idx = i;
+          break;
+        }
+        idx = i;
+      }
+      // linear interpolation for smoother animation
+      if (idx === 0) return fullPops[0];
+      const t0 = fullTimes[idx - 1];
+      const t1 = fullTimes[idx];
+      const p0 = fullPops[idx - 1];
+      const p1 = fullPops[idx];
+      if (t1 === t0) return p1;
+      const frac = (clampedT - t0) / (t1 - t0);
+      return p0 + frac * (p1 - p0);
+    }
+
+    // ---- update the world canvas and tick display based on currentTime ----
+    function updateWorldFromTime() {
+      const pop = getPopulationAtTime(currentTime);
+      drawAgents(pop);
+      document.getElementById('tickDisplay').textContent = `ticks: ${currentTime.toFixed(1)}  |  N = ${Math.round(pop)}`;
+    }
+
+    // ---- update charts (full curve) ----
     let chartSize, chartGrowth, chartPerCapita;
 
-    function updateAll() {
-      // compute curves and derived quantities
+    function updateCharts() {
+      // Recompute curve
       const { times, pops } = computeLogisticCurve(r, K, N0);
-      const halfK = K / 2;
+      fullTimes = times;
+      fullPops = pops;
 
-      // ---- 1. Population Size Chart (N vs t) ----
+      // Population Size vs Time
       chartSize.data.labels = times.map(t => t.toFixed(2));
       chartSize.data.datasets[0].data = pops;
-      // adjust y-axis max
       const maxPop = Math.max(K * 1.15, ...pops);
       chartSize.options.scales.y.max = Math.ceil(maxPop / 100) * 100;
       chartSize.update();
 
-      // ---- 2. Population Growth Rate (dN/dt vs N) ----
-      // dN/dt = r * N * (1 - N/K)
+      // Population Growth Rate vs N
       const growthRates = pops.map(N => r * N * (1 - N / K));
       chartGrowth.data.labels = pops.map(n => n.toFixed(1));
       chartGrowth.data.datasets[0].data = growthRates;
@@ -585,10 +546,9 @@
       chartGrowth.options.scales.y.max = Math.ceil(maxGrowth * 1.15) || 10;
       chartGrowth.update();
 
-      // ---- 3. Per Capita Growth Rate (dN/dt / N = r*(1 - N/K)) vs N ----
-      // For N=0 it's undefined, so we skip the first point (or set to r)
-      const perCapita = pops.map((N, idx) => {
-        if (N < 0.001) return r; // limit as N->0 is r
+      // Per Capita Growth Rate vs N
+      const perCapita = pops.map((N) => {
+        if (N < 0.001) return r;
         return r * (1 - N / K);
       });
       chartPerCapita.data.labels = pops.map(n => n.toFixed(1));
@@ -597,27 +557,91 @@
       chartPerCapita.options.scales.y.min = Math.min(0, ...perCapita) - 0.1;
       chartPerCapita.update();
 
-      // ---- update world agents: reflect current population at the latest time? ----
-      // We'll use the initial population N0 for the static agent representation,
-      // because the simulation hasn't "run" – but we want the dots to match N0.
-      // However, the slider changes N0, so we show N0 dots.
-      updateAgentsFromPopulation(N0);
+      // Update births/deaths display
+      const approxBirths = Math.round(r * N0 * 0.6);
+      const approxDeaths = Math.round(r * N0 * 0.1);
+      document.getElementById('birthsDisplay').textContent = Math.min(approxBirths, 20);
+      document.getElementById('deathsDisplay').textContent = Math.max(1, Math.min(approxDeaths, 10));
+    }
 
-      // ---- tick display ----
-      document.getElementById('tickDisplay').textContent = `ticks: ${Math.round(N0)} (population)`;
+    // ---- animation loop ----
+    function animate() {
+      if (!isRunning) return;
 
-      // ---- update UI numbers for sliders ----
-      document.getElementById('n0ValDisplay').textContent = N0;
-      document.getElementById('rValDisplay').textContent = r.toFixed(2);
-      document.getElementById('kValDisplay').textContent = K;
+      currentTime += TIME_SPEED;
+      if (currentTime >= T_MAX) {
+        currentTime = T_MAX;
+        isRunning = false;
+        document.getElementById('goBtn').classList.remove('running');
+        document.getElementById('goBtn').textContent = 'Go';
+        updateWorldFromTime();
+        return;
+      }
 
-      // ---- births/deaths visual ----
-      updateBirthDeathLabels();
+      updateWorldFromTime();
+      animationFrame = requestAnimationFrame(animate);
+    }
+
+    // ---- Setup: reset time and agents ----
+    function resetSimulation() {
+      // stop animation
+      isRunning = false;
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+      }
+      document.getElementById('goBtn').classList.remove('running');
+      document.getElementById('goBtn').textContent = 'Go';
+
+      // reset time
+      currentTime = 0;
+
+      // clear agents
+      agents = [];
+
+      // recompute curve with current parameters
+      const { times, pops } = computeLogisticCurve(r, K, N0);
+      fullTimes = times;
+      fullPops = pops;
+
+      // draw initial state
+      const initPop = getPopulationAtTime(0);
+      drawAgents(initPop);
+      document.getElementById('tickDisplay').textContent = `ticks: 0.0  |  N = ${Math.round(initPop)}`;
+
+      // update charts
+      updateCharts();
+    }
+
+    // ---- Go / Pause ----
+    function toggleGo() {
+      const goBtn = document.getElementById('goBtn');
+      if (isRunning) {
+        // pause
+        isRunning = false;
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+          animationFrame = null;
+        }
+        goBtn.classList.remove('running');
+        goBtn.textContent = 'Go';
+      } else {
+        // start/resume
+        if (currentTime >= T_MAX) {
+          // if at end, reset to beginning
+          currentTime = 0;
+          agents = [];
+        }
+        isRunning = true;
+        goBtn.classList.add('running');
+        goBtn.textContent = 'Pause';
+        animate();
+      }
     }
 
     // ---------- initialize charts with chart.js ----------
     function initCharts() {
-      // population size chart
+      // Population Size vs Time
       const ctxSize = document.getElementById('popSizeChart').getContext('2d');
       chartSize = new Chart(ctxSize, {
         type: 'line',
@@ -626,7 +650,7 @@
           datasets: [{
             label: 'N(t)',
             data: [],
-            borderColor: '#c0392b',   // red like the original red line
+            borderColor: '#c0392b',
             backgroundColor: 'transparent',
             borderWidth: 2.5,
             pointRadius: 0,
@@ -646,7 +670,7 @@
         }
       });
 
-      // population growth rate chart
+      // Growth Rate vs N
       const ctxGrowth = document.getElementById('growthRateChart').getContext('2d');
       chartGrowth = new Chart(ctxGrowth, {
         type: 'line',
@@ -675,7 +699,7 @@
         }
       });
 
-      // per capita growth rate chart
+      // Per Capita Growth Rate vs N
       const ctxPerCapita = document.getElementById('perCapitaChart').getContext('2d');
       chartPerCapita = new Chart(ctxPerCapita, {
         type: 'line',
@@ -684,7 +708,7 @@
           datasets: [{
             label: 'dN/dt / N',
             data: [],
-            borderColor: '#1e6fa3',  // blue for per capita
+            borderColor: '#1e6fa3',
             backgroundColor: 'transparent',
             borderWidth: 2.5,
             pointRadius: 0,
@@ -714,37 +738,38 @@
       n0Slider.addEventListener('input', (e) => {
         N0 = parseFloat(e.target.value);
         if (N0 > K) {
-          // clamp N0 to K-1 if it exceeds carrying capacity (slider max 300, K min 100, so safe)
           N0 = Math.min(N0, K - 1);
           n0Slider.value = N0;
         }
-        updateAll();
+        document.getElementById('n0ValDisplay').textContent = N0;
+        resetSimulation();
       });
 
       rSlider.addEventListener('input', (e) => {
         r = parseFloat(e.target.value);
-        updateAll();
+        document.getElementById('rValDisplay').textContent = r.toFixed(2);
+        resetSimulation();
       });
 
       kSlider.addEventListener('input', (e) => {
         K = parseFloat(e.target.value);
-        // adjust N0 if it exceeds new K
         if (N0 > K) {
           N0 = Math.min(N0, K - 1);
           n0Slider.value = N0;
+          document.getElementById('n0ValDisplay').textContent = N0;
         }
-        // also adjust slider max for N0? The original slider max 300, K might be 100 so we need to limit N0 slider.
-        // We'll dynamically set N0 slider max to min(300, K-1) to keep it valid.
         const maxN0 = Math.min(300, K - 1);
         n0Slider.max = maxN0;
         if (N0 > maxN0) {
           N0 = maxN0;
           n0Slider.value = N0;
+          document.getElementById('n0ValDisplay').textContent = N0;
         }
-        updateAll();
+        document.getElementById('kValDisplay').textContent = K;
+        resetSimulation();
       });
 
-      // initialize max for N0
+      // Initialize max for N0
       const maxN0 = Math.min(300, K - 1);
       n0Slider.max = maxN0;
     }
@@ -754,18 +779,24 @@
       initCharts();
       bindSliders();
 
-      // set initial values
+      // Set initial values
       N0 = 10; r = 1.2; K = 600;
       document.getElementById('n0Slider').value = N0;
       document.getElementById('rSlider').value = r;
       document.getElementById('kSlider').value = K;
+      document.getElementById('n0ValDisplay').textContent = N0;
+      document.getElementById('rValDisplay').textContent = r.toFixed(2);
+      document.getElementById('kValDisplay').textContent = K;
 
-      // ensure N0 slider max respects K
       const maxN0 = Math.min(300, K - 1);
       document.getElementById('n0Slider').max = maxN0;
 
-      // initial agent dots (will be set by updateAll)
-      updateAll();
+      // Initial setup
+      resetSimulation();
+
+      // Wire up buttons
+      document.getElementById('setupBtn').addEventListener('click', resetSimulation);
+      document.getElementById('goBtn').addEventListener('click', toggleGo);
     });
 
   })();
