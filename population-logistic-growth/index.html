@@ -17,7 +17,6 @@
       background: #fdf8e0;
     }
 
-    /* ---- Full-screen layout ---- */
     .app {
       position: relative;
       width: 100vw;
@@ -25,7 +24,7 @@
       background: #fdf8e0;
     }
 
-    /* ---- Main sandbox fills the whole screen ---- */
+    /* ---- Main sandbox ---- */
     .sandbox {
       position: absolute;
       inset: 0;
@@ -82,10 +81,9 @@
       width: 100%;
       height: 100%;
       background: #fdf8e0;
-      cursor: crosshair;
     }
 
-    /* ---- Bottom-left corner: parameter controls ---- */
+    /* ---- Bottom-left: parameter controls ---- */
     .controls-panel {
       position: absolute;
       bottom: 1rem;
@@ -102,7 +100,7 @@
     }
 
     .controls-panel h2 {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 700;
       margin: 0 0 0.6rem 0;
       color: #3a3020;
@@ -172,12 +170,12 @@
     .btn-go { background: #5a8a4a; }
     .btn-go.running { background: #b04040; border-color: #d06060; }
 
-    /* ---- Bottom-right corner: speed slider ---- */
+    /* ---- Bottom-right: speed slider ---- */
     .speed-panel {
       position: absolute;
       bottom: 1rem;
       right: 1rem;
-      width: 260px;
+      width: 240px;
       background: rgba(245, 238, 200, 0.96);
       border-radius: 14px;
       padding: 0.7rem 1rem 0.9rem 1rem;
@@ -190,7 +188,7 @@
     .speed-panel .speed-label {
       display: flex;
       justify-content: space-between;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: #4a3f28;
       text-transform: uppercase;
@@ -216,16 +214,21 @@
       box-shadow: 0 1px 4px rgba(80, 60, 20, 0.5); cursor: pointer;
     }
 
-    /* ---- Top-right corner: charts ---- */
+    /* ---- Top-right: charts (scalable) ---- */
     .charts-panel {
       position: absolute;
       top: 1rem;
       right: 1rem;
-      width: 300px;
+      width: 340px;
       display: flex;
       flex-direction: column;
-      gap: 0.7rem;
+      gap: 0.6rem;
       z-index: 10;
+      transition: width 0.2s ease;
+    }
+
+    .charts-panel.expanded {
+      width: 620px;
     }
 
     .chart-card {
@@ -235,74 +238,183 @@
       box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.45);
       border: 2px solid #d4c48a;
       backdrop-filter: blur(4px);
+      transition: all 0.2s ease;
     }
     .chart-card .chart-title {
       display: flex; justify-content: space-between;
-      font-size: 0.78rem; font-weight: 700; color: #3a3020;
+      font-size: 0.8rem; font-weight: 700; color: #3a3020;
       margin-bottom: 0.15rem; padding: 0 0.15rem;
     }
     .chart-card .chart-title span:last-child { color: #8a7a4a; font-weight: 400; }
     .chart-card canvas {
       width: 100% !important;
-      height: 105px !important;
-      max-height: 105px;
+      height: 110px !important;
+      max-height: 110px;
+      transition: height 0.2s ease, max-height 0.2s ease;
     }
 
-    /* ---- Legend for birth/death markers ---- */
+    .charts-panel.expanded .chart-card canvas {
+      height: 180px !important;
+      max-height: 180px;
+    }
+
+    /* Toggle button for charts */
+    .chart-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 12;
+      background: rgba(245, 238, 200, 0.96);
+      border: 2px solid #d4c48a;
+      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #5a4a2a;
+      box-shadow: 0 4px 10px rgba(120, 100, 40, 0.3);
+      transition: all 0.15s ease;
+      padding: 0;
+    }
+    .chart-toggle:hover {
+      background: #fff8e0;
+      transform: scale(1.05);
+    }
+
+    /* When charts are visible, toggle sits at top of charts panel */
+    .charts-panel.visible .chart-toggle {
+      position: relative;
+      top: auto;
+      right: auto;
+      align-self: flex-end;
+      margin-bottom: 0.3rem;
+    }
+
+    /* ---- Statistics panel (top-left) ---- */
+    .stats-panel {
+      position: absolute;
+      top: 3.4rem;
+      left: 1rem;
+      width: 290px;
+      background: rgba(255, 253, 240, 0.96);
+      border-radius: 12px;
+      padding: 0.75rem 1rem 0.9rem 1rem;
+      border: 2px solid #d4c48a;
+      box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.45);
+      z-index: 10;
+      color: #3a3020;
+      backdrop-filter: blur(4px);
+      font-size: 0.82rem;
+    }
+
+    .stats-panel h3 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      color: #3a3020;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border-bottom: 1px dashed #c8b87a;
+      padding-bottom: 0.3rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.22rem 0;
+      border-bottom: 1px dotted #e0d5a8;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row .stat-label {
+      font-weight: 600;
+      color: #5a4a2a;
+      font-size: 0.75rem;
+    }
+    .stat-row .stat-value {
+      font-family: 'SF Mono', monospace;
+      font-weight: 700;
+      color: #1a3a1a;
+      background: #fff8e0;
+      padding: 0.05rem 0.5rem;
+      border-radius: 30px;
+      border: 1px solid #c8b87a;
+      font-size: 0.78rem;
+      min-width: 60px;
+      text-align: right;
+    }
+    .stat-row .stat-value.highlight {
+      background: #d8f0c0;
+      color: #0a5a0a;
+      border-color: #8ab86a;
+    }
+    .stat-row .stat-value.warn {
+      background: #f0e0c0;
+      color: #8a5a0a;
+      border-color: #c8a86a;
+    }
+
+    /* Legend */
     .legend-panel {
       position: absolute;
       top: 1rem;
       left: 1rem;
       background: rgba(255, 253, 240, 0.92);
       border-radius: 12px;
-      padding: 0.6rem 0.9rem;
+      padding: 0.5rem 0.85rem;
       border: 2px solid #d4c48a;
       box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.4);
       z-index: 10;
       color: #3a3020;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       backdrop-filter: blur(4px);
+      display: flex;
+      gap: 0.9rem;
+      align-items: center;
     }
-    .legend-panel .legend-row {
+    .legend-item {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      margin: 0.2rem 0;
+      gap: 0.35rem;
       font-weight: 600;
     }
     .legend-swatch {
       display: inline-block;
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       flex-shrink: 0;
     }
-    .legend-swatch.normal { background: #111111; width: 10px; height: 10px; margin: 0 2px; }
+    .legend-swatch.normal { background: #111111; width: 9px; height: 9px; margin: 0 1.5px; }
     .legend-swatch.born { background: #22aa22; }
     .legend-x {
       position: relative;
-      width: 14px; height: 14px;
+      width: 12px; height: 12px;
       flex-shrink: 0;
     }
     .legend-x::before, .legend-x::after {
       content: '';
       position: absolute;
       left: 50%; top: 50%;
-      width: 14px; height: 2.5px;
+      width: 12px; height: 2px;
       background: #cc2222;
       transform-origin: center;
     }
     .legend-x::before { transform: translate(-50%, -50%) rotate(45deg); }
     .legend-x::after  { transform: translate(-50%, -50%) rotate(-45deg); }
 
-    /* Responsive tweaks */
-    @media (max-width: 1000px) {
-      .charts-panel { width: 240px; }
-      .controls-panel { width: 280px; }
-      .speed-panel { width: 220px; }
+    @media (max-width: 1100px) {
+      .charts-panel { width: 280px; }
+      .charts-panel.expanded { width: 480px; }
+      .stats-panel { width: 250px; }
     }
-    @media (max-width: 760px) {
+    @media (max-width: 850px) {
       .charts-panel { display: none; }
+      .chart-toggle { display: none; }
     }
   </style>
 </head>
@@ -320,30 +432,76 @@
     </div>
   </div>
 
-  <!-- Legend (top-left, under title) -->
-  <div class="legend-panel" style="top: 3.2rem;">
-    <div class="legend-row"><span class="legend-swatch normal"></span> Living individual</div>
-    <div class="legend-row"><span class="legend-swatch born"></span> Born this tick</div>
-    <div class="legend-row"><span class="legend-x"></span> Died this tick</div>
+  <!-- Legend -->
+  <div class="legend-panel">
+    <div class="legend-item"><span class="legend-swatch normal"></span> Alive</div>
+    <div class="legend-item"><span class="legend-swatch born"></span> Born</div>
+    <div class="legend-item"><span class="legend-x"></span> Died</div>
   </div>
 
-  <!-- Charts (top-right corner) -->
-  <div class="charts-panel">
+  <!-- Statistics panel -->
+  <div class="stats-panel">
+    <h3>📊 Statistics</h3>
+    <div class="stat-row">
+      <span class="stat-label">Current Population</span>
+      <span class="stat-value" id="statPop">10</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Carrying Capacity (K)</span>
+      <span class="stat-value" id="statK">600</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Population / K</span>
+      <span class="stat-value" id="statRatio">1.7%</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Time to reach K/2</span>
+      <span class="stat-value" id="statHalfTime">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Time to reach 90% K</span>
+      <span class="stat-value" id="statNinetyTime">—</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Max growth rate (rK/4)</span>
+      <span class="stat-value" id="statMaxGrowth">180.0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Current growth rate</span>
+      <span class="stat-value highlight" id="statCurrentGrowth">0.0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Current per-capita rate</span>
+      <span class="stat-value" id="statPerCapita">1.20</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Total births so far</span>
+      <span class="stat-value" id="statTotalBirths">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Total deaths so far</span>
+      <span class="stat-value" id="statTotalDeaths">0</span>
+    </div>
+  </div>
+
+  <!-- Charts (top-right, scalable) -->
+  <div class="charts-panel visible" id="chartsPanel">
+    <button class="chart-toggle" id="chartToggle" title="Toggle chart size">⤢</button>
     <div class="chart-card">
-      <div class="chart-title"><span>Population Size</span><span>☰</span></div>
+      <div class="chart-title"><span>Population Size</span><span>N vs t</span></div>
       <canvas id="popSizeChart"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title"><span>Population Growth Rate</span><span>☰</span></div>
+      <div class="chart-title"><span>Population Growth Rate</span><span>dN/dt vs N</span></div>
       <canvas id="growthRateChart"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-title"><span>Per Capita Growth Rate</span><span>☰</span></div>
+      <div class="chart-title"><span>Per Capita Growth Rate</span><span>dN/dt/N vs N</span></div>
       <canvas id="perCapitaChart"></canvas>
     </div>
   </div>
 
-  <!-- Controls (bottom-left corner) -->
+  <!-- Controls (bottom-left) -->
   <div class="controls-panel">
     <h2>Population Parameters</h2>
     <div class="param-group">
@@ -366,7 +524,7 @@
           <span>Carrying Capacity (K)</span>
           <span id="kValDisplay">600</span>
         </div>
-        <input type="range" id="kSlider" min="100" max="10000" value="600" step="50">
+        <input type="range" id="kSlider" min="100" max="3000" value="600" step="50">
       </div>
     </div>
 
@@ -387,7 +545,7 @@
     </div>
   </div>
 
-  <!-- Speed (bottom-right corner) -->
+  <!-- Speed (bottom-right) -->
   <div class="speed-panel">
     <div class="speed-label">
       <span>Simulation Speed</span>
@@ -414,14 +572,23 @@
   let animationFrame = null;
   const T_MAX = 30;
 
-  // The actual population (number of individuals)
   let population = 10;
 
-  // History for charts — recorded each tick from actual simulation
+  // Running totals
+  let totalBirths = 0;
+  let totalDeaths = 0;
+
+  // Time tracking for statistics
+  let timeToHalfK = null;   // time when N first reached K/2
+  let timeToNinetyK = null; // time when N first reached 0.9*K
+  let currentGrowthRate = 0;
+  let currentPerCapita = 0;
+
+  // History for charts
   const historyTimes = [];
   const historyPops = [];
-  const historyGrowth = [];      // {N, rate}
-  const historyPerCapita = [];   // {N, rate}
+  const historyGrowth = [];
+  const historyPerCapita = [];
 
   // ---------- world canvas ----------
   const canvas = document.getElementById('worldCanvas');
@@ -437,8 +604,6 @@
     drawWorld();
   }
 
-  // Each agent: {x, y, state}
-  // state: 'normal' | 'born' | 'dying'
   let agents = [];
 
   // ---------- drawing ----------
@@ -446,14 +611,13 @@
     ctx.fillStyle = '#fdf8e0';
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
-    // Dot size adapts slightly to canvas size
-    const baseRadius = Math.max(1.4, Math.min(2.2, worldWidth / 350));
+    const baseRadius = Math.max(1.2, Math.min(2.0, worldWidth / 500));
 
     for (let a of agents) {
       if (a.state === 'dying') {
         ctx.strokeStyle = '#cc2222';
-        ctx.lineWidth = 2.5;
-        const s = baseRadius + 2.2;
+        ctx.lineWidth = 2.2;
+        const s = baseRadius + 2.0;
         ctx.beginPath();
         ctx.moveTo(a.x - s, a.y - s);
         ctx.lineTo(a.x + s, a.y + s);
@@ -463,7 +627,7 @@
       } else if (a.state === 'born') {
         ctx.fillStyle = '#22aa22';
         ctx.beginPath();
-        ctx.arc(a.x, a.y, baseRadius + 1.2, 0, 2 * Math.PI);
+        ctx.arc(a.x, a.y, baseRadius + 1.1, 0, 2 * Math.PI);
         ctx.fill();
       } else {
         ctx.fillStyle = '#111111';
@@ -474,14 +638,12 @@
     }
   }
 
-  // ---------- convert population to number of dots (scaled) ----------
-  // Now K can be up to 10000, but we cap visible dots at ~1500 for performance.
+  // ---------- population -> dots (scaled) ----------
   function popToDots(pop) {
     const MAX_VISIBLE = 1500;
     return Math.min(MAX_VISIBLE, Math.max(0, Math.round(pop)));
   }
 
-  // ---------- spawn one agent ----------
   function spawnAgent(state) {
     return {
       x: Math.random() * (worldWidth - 10) + 5,
@@ -490,29 +652,24 @@
     };
   }
 
-  // ---------- remove all 'dying' agents from the previous tick ----------
   function clearOldDying() {
     agents = agents.filter(a => a.state !== 'dying');
-    // Promote 'born' to 'normal'
     for (let a of agents) {
       if (a.state === 'born') a.state = 'normal';
     }
   }
 
-  // ---------- apply births ----------
   function applyBirths(births) {
     for (let i = 0; i < births; i++) {
       agents.push(spawnAgent('born'));
     }
   }
 
-  // ---------- apply deaths ----------
   function applyDeaths(deaths) {
     const normalIdx = [];
     for (let i = 0; i < agents.length; i++) {
       if (agents[i].state === 'normal') normalIdx.push(i);
     }
-    // Shuffle
     for (let i = normalIdx.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [normalIdx[i], normalIdx[j]] = [normalIdx[j], normalIdx[i]];
@@ -521,7 +678,6 @@
     for (let i = 0; i < toMark; i++) {
       agents[normalIdx[i]].state = 'dying';
     }
-    // If we still need more, mark any non-dying agent
     let remaining = deaths - toMark;
     if (remaining > 0) {
       for (let i = 0; i < agents.length && remaining > 0; i++) {
@@ -534,11 +690,6 @@
   }
 
   // ---------- ONE simulation tick ----------
-  // Logistic model at the individual level:
-  //   per-capita birth rate b = r
-  //   per-capita death rate d = r * N / K
-  // => births per tick = r * N * dt
-  //    deaths per tick = (r * N^2 / K) * dt
   function tick(dt) {
     const N = population;
     if (N <= 0) return { births: 0, deaths: 0 };
@@ -546,7 +697,6 @@
     const expectedBirths = r * N * dt;
     const expectedDeaths = (r * N * N / K) * dt;
 
-    // Stochastic rounding preserves expected value
     let births = Math.floor(expectedBirths);
     if (Math.random() < (expectedBirths - births)) births++;
 
@@ -558,14 +708,27 @@
     population = N + births - deaths;
     if (population < 0) population = 0;
 
-    // Record actual growth for charts
-    const actualGrowth = births - deaths;
-    const actualPerCapita = N > 0 ? actualGrowth / N : 0;
+    // Track totals
+    totalBirths += births;
+    totalDeaths += deaths;
 
+    // Track statistics thresholds
+    if (timeToHalfK === null && population >= K / 2) {
+      timeToHalfK = currentTime;
+    }
+    if (timeToNinetyK === null && population >= 0.9 * K) {
+      timeToNinetyK = currentTime;
+    }
+
+    // Current instantaneous rates
+    currentGrowthRate = births - deaths;
+    currentPerCapita = N > 0 ? currentGrowthRate / N : 0;
+
+    // Record history
     historyTimes.push(currentTime);
     historyPops.push(population);
-    historyGrowth.push({ N: N, rate: actualGrowth });
-    historyPerCapita.push({ N: N, rate: actualPerCapita });
+    historyGrowth.push({ N: N, rate: currentGrowthRate });
+    historyPerCapita.push({ N: N, rate: currentPerCapita });
 
     return { births, deaths };
   }
@@ -590,19 +753,42 @@
     applyDeaths(deaths);
 
     drawWorld();
+    updateStats();
+    updateCharts();
 
     document.getElementById('tickDisplay').textContent =
       `t = ${currentTime.toFixed(2)}  |  N = ${population}`;
     document.getElementById('birthsDisplay').textContent = births;
     document.getElementById('deathsDisplay').textContent = deaths;
 
-    updateCharts();
-
     if (isRunning) {
       animationFrame = requestAnimationFrame(stepSimulation);
     } else {
       drawWorld();
     }
+  }
+
+  // ---------- statistics panel ----------
+  function updateStats() {
+    document.getElementById('statPop').textContent = population;
+    document.getElementById('statK').textContent = K;
+    const ratio = (population / K * 100).toFixed(1);
+    document.getElementById('statRatio').textContent = ratio + '%';
+
+    document.getElementById('statHalfTime').textContent =
+      timeToHalfK !== null ? timeToHalfK.toFixed(2) : '—';
+    document.getElementById('statNinetyTime').textContent =
+      timeToNinetyK !== null ? timeToNinetyK.toFixed(2) : '—';
+
+    const maxGrowth = (r * K) / 4;
+    document.getElementById('statMaxGrowth').textContent = maxGrowth.toFixed(1);
+
+    document.getElementById('statCurrentGrowth').textContent =
+      currentGrowthRate.toFixed(1);
+    document.getElementById('statPerCapita').textContent =
+      currentPerCapita.toFixed(3);
+    document.getElementById('statTotalBirths').textContent = totalBirths;
+    document.getElementById('statTotalDeaths').textContent = totalDeaths;
   }
 
   // ---------- charts ----------
@@ -612,45 +798,45 @@
     // Population Size vs Time
     chartSize.data.labels = historyTimes.map(t => t.toFixed(2));
     chartSize.data.datasets[0].data = historyPops;
-    const maxPop = Math.max(K * 1.15, population, ...historyPops, 10);
-    chartSize.options.scales.y.max = Math.ceil(maxPop / 100) * 100;
+    const maxPop = Math.max(K * 1.05, population, ...historyPops, 10);
+    chartSize.options.scales.y.max = Math.ceil(maxPop / 50) * 50;
     chartSize.update('none');
 
     // Growth Rate vs N
     chartGrowth.data.labels = historyGrowth.map(h => h.N.toFixed(1));
     chartGrowth.data.datasets[0].data = historyGrowth.map(h => h.rate);
     const maxG = Math.max(...historyGrowth.map(h => Math.abs(h.rate)), 10);
-    chartGrowth.options.scales.y.max = Math.ceil(maxG * 1.3);
-    chartGrowth.options.scales.y.min = -Math.ceil(maxG * 0.3);
+    chartGrowth.options.scales.y.max = Math.ceil(maxG * 1.2);
+    chartGrowth.options.scales.y.min = -Math.ceil(maxG * 0.2);
     chartGrowth.update('none');
 
     // Per Capita Growth Rate vs N
     chartPerCapita.data.labels = historyPerCapita.map(h => h.N.toFixed(1));
     chartPerCapita.data.datasets[0].data = historyPerCapita.map(h => h.rate);
     const maxPC = Math.max(...historyPerCapita.map(h => Math.abs(h.rate)), 1);
-    chartPerCapita.options.scales.y.max = Math.ceil(maxPC * 1.3 * 10) / 10;
-    chartPerCapita.options.scales.y.min = -Math.ceil(maxPC * 0.3 * 10) / 10;
+    chartPerCapita.options.scales.y.max = Math.ceil(maxPC * 1.2 * 10) / 10;
+    chartPerCapita.options.scales.y.min = -Math.ceil(maxPC * 0.2 * 10) / 10;
     chartPerCapita.update('none');
   }
 
   function initCharts() {
     const smallFont = { size: 8 };
-    const titleFont = { size: 8 };
+    const titleFont = { size: 9, weight: '600' };
 
     const ctxSize = document.getElementById('popSizeChart').getContext('2d');
     chartSize = new Chart(ctxSize, {
       type: 'line',
       data: { labels: [], datasets: [{
         label: 'N(t)', data: [], borderColor: '#c0392b',
-        backgroundColor: 'transparent', borderWidth: 2,
-        pointRadius: 0, tension: 0.1, fill: false,
+        backgroundColor: 'rgba(192, 57, 43, 0.06)',
+        borderWidth: 2, pointRadius: 0, tension: 0.1, fill: true,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: {
           x: { title: { display: true, text: 'Time (t)', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } },
-          y: { title: { display: true, text: 'N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 }, beginAtZero: true }
+          y: { title: { display: true, text: 'Population N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 }, beginAtZero: true }
         }
       }
     });
@@ -660,14 +846,14 @@
       type: 'line',
       data: { labels: [], datasets: [{
         label: 'dN/dt', data: [], borderColor: '#c0392b',
-        backgroundColor: 'transparent', borderWidth: 2,
-        pointRadius: 0, tension: 0.1, fill: false,
+        backgroundColor: 'rgba(192, 57, 43, 0.06)',
+        borderWidth: 2, pointRadius: 0, tension: 0.1, fill: true,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: {
-          x: { title: { display: true, text: 'N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } },
+          x: { title: { display: true, text: 'Population N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } },
           y: { title: { display: true, text: 'dN/dt', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } }
         }
       }
@@ -678,14 +864,14 @@
       type: 'line',
       data: { labels: [], datasets: [{
         label: 'dN/dt / N', data: [], borderColor: '#1e6fa3',
-        backgroundColor: 'transparent', borderWidth: 2,
-        pointRadius: 0, tension: 0.1, fill: false,
+        backgroundColor: 'rgba(30, 111, 163, 0.06)',
+        borderWidth: 2, pointRadius: 0, tension: 0.1, fill: true,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: {
-          x: { title: { display: true, text: 'N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } },
+          x: { title: { display: true, text: 'Population N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } },
           y: { title: { display: true, text: 'dN/dt / N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } }
         }
       }
@@ -704,13 +890,18 @@
 
     currentTime = 0;
     population = N0;
+    totalBirths = 0;
+    totalDeaths = 0;
+    timeToHalfK = null;
+    timeToNinetyK = null;
+    currentGrowthRate = 0;
+    currentPerCapita = r; // initial per-capita when N is small
 
     historyTimes.length = 0;
     historyPops.length = 0;
     historyGrowth.length = 0;
     historyPerCapita.length = 0;
 
-    // Initialize agents from N0
     agents = [];
     const dots = popToDots(N0);
     for (let i = 0; i < dots; i++) {
@@ -721,15 +912,20 @@
     historyTimes.push(0);
     historyPops.push(population);
     historyGrowth.push({ N: population, rate: 0 });
-    historyPerCapita.push({ N: population, rate: 0 });
+    historyPerCapita.push({ N: population, rate: r });
+
+    // Check if initial pop already past thresholds
+    if (population >= K / 2) timeToHalfK = 0;
+    if (population >= 0.9 * K) timeToNinetyK = 0;
 
     drawWorld();
+    updateStats();
+    updateCharts();
+
     document.getElementById('tickDisplay').textContent =
       `t = 0.00  |  N = ${population}`;
     document.getElementById('birthsDisplay').textContent = '0';
     document.getElementById('deathsDisplay').textContent = '0';
-
-    updateCharts();
   }
 
   // ---------- go / pause ----------
@@ -801,10 +997,27 @@
     n0Slider.max = maxN0;
   }
 
+  // ---------- chart panel toggle ----------
+  function bindChartToggle() {
+    const toggleBtn = document.getElementById('chartToggle');
+    const panel = document.getElementById('chartsPanel');
+    toggleBtn.addEventListener('click', () => {
+      panel.classList.toggle('expanded');
+      toggleBtn.textContent = panel.classList.contains('expanded') ? '⤡' : '⤢';
+      // Small delay then update charts to fit new size
+      setTimeout(() => {
+        if (chartSize) chartSize.resize();
+        if (chartGrowth) chartGrowth.resize();
+        if (chartPerCapita) chartPerCapita.resize();
+      }, 220);
+    });
+  }
+
   // ---------- start ----------
   window.addEventListener('load', () => {
     initCharts();
     bindSliders();
+    bindChartToggle();
 
     N0 = 10; r = 1.2; K = 600;
     document.getElementById('n0Slider').value = N0;
@@ -819,7 +1032,6 @@
     const maxN0 = Math.min(500, K - 1);
     document.getElementById('n0Slider').max = maxN0;
 
-    // Size the canvas to fill its parent
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
