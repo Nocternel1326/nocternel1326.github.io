@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logistic Growth · Population Dynamics</title>
-  <!-- Chart.js for clean, responsive plotting -->
+  <title>Logistic Growth Model · single population</title>
+  <!-- Chart.js for the three plots -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
-      font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
     }
 
     body {
-      background: linear-gradient(145deg, #f8fafc 0%, #eef2f6 100%);
+      background: #1a1e24;
       min-height: 100vh;
       margin: 0;
       display: flex;
@@ -22,464 +22,704 @@
       padding: 1.5rem;
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(4px);
-      border-radius: 2rem;
-      box-shadow: 0 25px 40px -12px rgba(0, 20, 30, 0.35),
-                  inset 0 1px 3px rgba(255, 255, 255, 0.8);
-      padding: 2rem 2rem 2rem 2rem;
-      max-width: 1000px;
-      width: 100%;
-      border: 1px solid rgba(255, 255, 255, 0.5);
+    /* main panel – dark UI like NetLogo */
+    .netlogo-panel {
+      background: #2e353d;
+      border-radius: 1.5rem;
+      padding: 1.5rem 2rem 1.8rem 2rem;
+      max-width: 1400px;
+      width: fit-content;
+      box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.7);
+      border: 1px solid #47515c;
     }
 
-    h1 {
-      font-size: 1.9rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      color: #0b2b3b;
-      margin-top: 0;
-      margin-bottom: 0.35rem;
+    .header {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      color: #e3e9f0;
     }
 
-    .subtitle {
-      color: #2c4a5e;
-      margin-bottom: 1.75rem;
-      font-weight: 400;
-      font-size: 1.05rem;
-      border-left: 4px solid #3b8fc2;
-      padding-left: 1rem;
-      background: rgba(59, 143, 194, 0.05);
-      border-radius: 0 8px 8px 0;
-      line-height: 1.4;
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
-    .equation-badge {
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      background: #1e3b4b;
-      color: #d4edff;
-      padding: 0.3rem 1rem;
+    .logo-badge {
+      background: #1e6f9f;
+      padding: 0.2rem 1rem 0.2rem 0.8rem;
       border-radius: 40px;
       font-size: 0.9rem;
-      display: inline-block;
-      margin-bottom: 1.25rem;
+      font-weight: 500;
+      color: white;
       letter-spacing: 0.3px;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+      box-shadow: inset 0 1px 3px rgba(255,255,255,0.2);
     }
 
-    .chart-container {
-      position: relative;
-      height: 360px;
-      width: 100%;
-      margin-bottom: 2rem;
-      background: #ffffffd9;
-      border-radius: 1.5rem;
-      padding: 0.75rem;
-      box-shadow: 0 8px 20px -8px rgba(0, 40, 60, 0.2);
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem 1.75rem;
-      margin-top: 1rem;
-      background: #ffffffc2;
-      padding: 1.5rem 1.5rem 1.75rem;
-      border-radius: 1.5rem;
-      backdrop-filter: blur(2px);
-      border: 1px solid #ffffff;
-    }
-
-    .slider-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-
-    .slider-group label {
-      display: flex;
-      justify-content: space-between;
+    .title-section h1 {
+      font-size: 1.5rem;
       font-weight: 500;
-      color: #0e3d53;
-      font-size: 0.95rem;
-      letter-spacing: 0.01em;
+      margin: 0;
+      color: #f0f5fa;
+      letter-spacing: 0.2px;
     }
 
-    .slider-group label span:last-child {
-      font-family: 'SF Mono', monospace;
-      background: #d7e7f1;
-      padding: 0.15rem 0.7rem;
-      border-radius: 40px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #0a3142;
-    }
-
-    input[type=range] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 7px;
-      background: linear-gradient(90deg, #b3d9f0 0%, #2a6f97 100%);
-      border-radius: 20px;
-      outline: none;
-      margin: 0.35rem 0;
-    }
-
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 22px;
-      height: 22px;
-      background: white;
-      border-radius: 50%;
-      box-shadow: 0 4px 10px rgba(0, 30, 50, 0.4), 0 0 0 2px #1b6b99;
-      cursor: pointer;
-      transition: 0.1s;
-      border: 2px solid #ffffff;
-    }
-
-    input[type=range]::-webkit-slider-thumb:hover {
-      background: #f0f9ff;
-      transform: scale(1.15);
-      box-shadow: 0 6px 14px rgba(0, 50, 70, 0.5), 0 0 0 2px #0a4b6e;
-    }
-
-    .stats {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 1.5rem;
-      padding-top: 0.75rem;
-      border-top: 1px dashed #b8d1e0;
-      color: #1e4a62;
-      font-size: 0.95rem;
-    }
-
-    .stat-item {
-      background: #e2eef9;
-      border-radius: 40px;
-      padding: 0.3rem 1.2rem;
-      font-family: 'SF Mono', monospace;
-      font-weight: 500;
+    .export-buttons {
       display: flex;
       gap: 0.5rem;
-      align-items: center;
-      box-shadow: inset 0 1px 4px rgba(255,255,255,0.8), 0 2px 5px rgba(0,0,0,0.02);
     }
 
-    .stat-item strong {
-      color: #0b3b4f;
-      font-weight: 700;
-    }
-
-    .note {
+    .export-btn {
+      background: #3f4a56;
+      border: none;
+      color: #d3dee8;
+      padding: 0.2rem 1rem;
+      border-radius: 6px;
       font-size: 0.85rem;
-      color: #3f6279;
-      text-align: right;
-      font-style: italic;
+      font-weight: 500;
+      cursor: default;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      border: 1px solid #5b6773;
     }
 
-    @media (max-width: 600px) {
-      .card { padding: 1.5rem; }
-      h1 { font-size: 1.5rem; }
-      .chart-container { height: 280px; }
-      .controls { gap: 1rem; }
+    /* speed slider row */
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0.5rem 0 1.2rem 0;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+    }
+
+    .speed-row input {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      background: #3e4b57;
+      border-radius: 10px;
+    }
+
+    .speed-row input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #4a8bb9;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px black;
+      cursor: pointer;
+    }
+
+    /* main simulation area */
+    .world-and-params {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* NetLogo world – black background with agents */
+    .world-container {
+      background: #000;
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: inset 0 0 20px #000, 0 8px 12px rgba(0,0,0,0.6);
+      border: 1px solid #5c6a78;
+    }
+
+    .world-canvas {
+      display: block;
+      width: 500px;
+      height: 300px;
+      border-radius: 6px;
+      background: #000;
+    }
+
+    .tick-label {
+      margin-top: 6px;
+      font-family: 'SF Mono', monospace;
+      font-size: 0.85rem;
+      color: #aab8c5;
+      padding-left: 6px;
+    }
+
+    /* right side parameters – NetLogo style */
+    .params-panel {
+      background: #2b333b;
+      border-radius: 12px;
+      padding: 1rem 1.5rem 1.2rem 1.5rem;
+      box-shadow: inset 0 1px 3px #3f4b55, 0 6px 10px #0f1215;
+      border: 1px solid #505e6b;
+      min-width: 280px;
+      color: #dfe7ef;
+    }
+
+    .params-panel h2 {
+      font-size: 1.2rem;
+      font-weight: 500;
+      text-align: center;
+      margin: 0 0 0.75rem 0;
+      color: #ced9e3;
+      letter-spacing: 0.5px;
+    }
+
+    .param-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .slider-item .label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #b6c6d6;
+    }
+
+    .slider-item .label-row span:last-child {
+      font-family: 'SF Mono', monospace;
+      background: #1e2a33;
+      padding: 0.1rem 0.6rem;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      border: 1px solid #3d4e5d;
+    }
+
+    .slider-item input[type=range] {
+      width: 100%;
+      height: 5px;
+      -webkit-appearance: none;
+      background: #1e2a33;
+      border-radius: 10px;
+      margin: 5px 0 2px;
+      border: 1px solid #374854;
+    }
+
+    .slider-item input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #3d8ec9;
+      border-radius: 50%;
+      border: 2px solid #f0f7ff;
+      box-shadow: 0 1px 5px black;
+      cursor: pointer;
+    }
+
+    /* births/deaths row (green boxes) */
+    .birth-death-row {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.8rem;
+      justify-content: center;
+    }
+
+    .bd-box {
+      background: #d8e6b0;
+      border-radius: 6px;
+      padding: 0.2rem 0.6rem;
+      text-align: center;
+      border: 1px solid #b0c48c;
+      box-shadow: inset 0 1px 4px #f5ffe0, 0 2px 3px black;
+      min-width: 65px;
+    }
+
+    .bd-box .bd-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #3a4d1e;
+      letter-spacing: 0.3px;
+    }
+
+    .bd-box .bd-value {
+      font-family: 'SF Mono', monospace;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1e3300;
+    }
+
+    /* buttons */
+    .button-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+
+    .btn {
+      background: #4c6b8a;
+      border: none;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.5rem 1.2rem;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 4px 0 #1e2d3a, 0 5px 12px black;
+      cursor: default;
+      transition: none;
+      border: 1px solid #6b8fb0;
+    }
+
+    .btn-setup {
+      background: #5f7e9c;
+    }
+
+    .btn-go {
+      background: #3d7ea6;
+    }
+
+    /* three charts row */
+    .charts-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      margin-top: 1.8rem;
+      justify-content: center;
+    }
+
+    .chart-card {
+      background: #f5f9fe;
+      border-radius: 10px;
+      padding: 0.8rem 0.8rem 0.3rem 0.8rem;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.6);
+      border: 1px solid #b8c9da;
+      flex: 1 1 240px;
+      max-width: 280px;
+    }
+
+    .chart-card .chart-title {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #1a2b3c;
+      margin-bottom: 0.2rem;
+      padding: 0 0.2rem;
+    }
+
+    .chart-card .chart-title span:last-child {
+      color: #718096;
+      font-weight: 400;
+    }
+
+    .chart-card canvas {
+      width: 100% !important;
+      height: 140px !important;
+      max-height: 140px;
+    }
+
+    /* command center strip */
+    .command-center {
+      margin-top: 1.5rem;
+      background: #b7c4d9;
+      border-radius: 40px;
+      padding: 0.7rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #1b2b3a;
+      font-weight: 600;
+      box-shadow: inset 0 2px 8px #ffffffb0, 0 6px 10px black;
+      border: 1px solid #e3edff;
+    }
+
+    .command-center span:first-child {
+      font-size: 1rem;
+      letter-spacing: 0.3px;
+    }
+
+    /* utility */
+    .text-small {
+      font-size: 0.75rem;
+      color: #98a9bb;
     }
   </style>
 </head>
 <body>
-<div class="card">
-  <h1>
-    <span>📈 Logistic Growth</span>
-  </h1>
-  <div class="equation-badge">
-    dN/dt = r · N · (1 − N/K)
-  </div>
-  <div class="subtitle">
-    Population dynamics with carrying capacity · adjust parameters below
-  </div>
-
-  <!-- Chart area -->
-  <div class="chart-container">
-    <canvas id="logisticChart"></canvas>
-  </div>
-
-  <!-- Interactive controls -->
-  <div class="controls">
-    <div class="slider-group">
-      <label>
-        <span>🌱 Growth rate (r)</span>
-        <span id="rValue">0.80</span>
-      </label>
-      <input type="range" id="rSlider" min="0.1" max="1.5" value="0.8" step="0.01">
+<div class="netlogo-panel">
+  <!-- header -->
+  <div class="header">
+    <div class="title-section">
+      <div class="logo-badge">powered by NetLogo</div>
+      <h1>Logistic_Growth</h1>
     </div>
-    <div class="slider-group">
-      <label>
-        <span>🏔️ Carrying capacity (K)</span>
-        <span id="kValue">1000</span>
-      </label>
-      <input type="range" id="kSlider" min="200" max="2000" value="1000" step="10">
-    </div>
-    <div class="slider-group">
-      <label>
-        <span>🔵 Initial population (N₀)</span>
-        <span id="n0Value">50</span>
-      </label>
-      <input type="range" id="n0Slider" min="1" max="500" value="50" step="1">
+    <div class="export-buttons">
+      <button class="export-btn" disabled>Export: NetLogo</button>
+      <button class="export-btn" disabled>HTML</button>
     </div>
   </div>
 
-  <!-- Live stats -->
-  <div class="stats">
-    <div class="stat-item">
-      <span>⏱️ Time to K/2</span>
-      <strong id="halfTimeDisplay">—</strong>
+  <!-- speed slider (non-functional but visual) -->
+  <div class="speed-row">
+    <span style="min-width:40px;">speed</span>
+    <input type="range" min="0" max="100" value="65" disabled>
+  </div>
+
+  <!-- main world + parameters -->
+  <div class="world-and-params">
+    <!-- left: world canvas and tick counter -->
+    <div>
+      <div class="world-container">
+        <canvas id="worldCanvas" class="world-canvas" width="500" height="300"></canvas>
+      </div>
+      <div class="tick-label" id="tickDisplay">ticks: 0</div>
     </div>
-    <div class="stat-item">
-      <span>📊 Max growth rate</span>
-      <strong id="maxRateDisplay">—</strong>
+
+    <!-- right: parameters panel (single population) -->
+    <div class="params-panel">
+      <h2>Population Parameters</h2>
+      <div class="param-group">
+        <!-- Initial population N0 -->
+        <div class="slider-item">
+          <div class="label-row">
+            <span>N-Zero</span>
+            <span id="n0ValDisplay">10</span>
+          </div>
+          <input type="range" id="n0Slider" min="1" max="300" value="10" step="1">
+        </div>
+        <!-- Growth rate r -->
+        <div class="slider-item">
+          <div class="label-row">
+            <span>r</span>
+            <span id="rValDisplay">1.20</span>
+          </div>
+          <input type="range" id="rSlider" min="0.1" max="1.5" value="1.2" step="0.01">
+        </div>
+        <!-- Carrying capacity K -->
+        <div class="slider-item">
+          <div class="label-row">
+            <span>K</span>
+            <span id="kValDisplay">600</span>
+          </div>
+          <input type="range" id="kSlider" min="100" max="1000" value="600" step="10">
+        </div>
+      </div>
+
+      <!-- Births / Deaths (static but shown) -->
+      <div class="birth-death-row">
+        <div class="bd-box">
+          <div class="bd-label">Births</div>
+          <div class="bd-value" id="birthsDisplay">6</div>
+        </div>
+        <div class="bd-box">
+          <div class="bd-label">Deaths</div>
+          <div class="bd-value" id="deathsDisplay">1</div>
+        </div>
+      </div>
+
+      <!-- Setup / Go buttons -->
+      <div class="button-row">
+        <button class="btn btn-setup" id="setupBtn" disabled>Setup</button>
+        <button class="btn btn-go" id="goBtn" disabled>Go</button>
+      </div>
     </div>
-    <div class="note">
-      N(t) solved numerically (RK4)
+  </div>
+
+  <!-- three charts row -->
+  <div class="charts-row">
+    <!-- Population Size -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <span>Population Size</span>
+        <span>☰</span>
+      </div>
+      <canvas id="popSizeChart" width="240" height="140"></canvas>
     </div>
+    <!-- Population Growth Rate -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <span>Population Growth Rate</span>
+        <span>☰</span>
+      </div>
+      <canvas id="growthRateChart" width="240" height="140"></canvas>
+    </div>
+    <!-- Per Capita Growth Rate -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <span>Per Capita Growth Rate</span>
+        <span>☰</span>
+      </div>
+      <canvas id="perCapitaChart" width="240" height="140"></canvas>
+    </div>
+  </div>
+
+  <!-- command center strip -->
+  <div class="command-center">
+    <span>Command Center</span>
+    <span>▼</span>
   </div>
 </div>
 
 <script>
   (function() {
-    // ----- configuration -----
-    const T_MAX = 30;          // total time units
-    const STEPS = 300;         // number of points for smooth curve
-    const DT = T_MAX / STEPS;  // step size
+    // ---------- simulation parameters ----------
+    let N0 = 10;           // initial population
+    let r = 1.2;          // intrinsic growth rate
+    let K = 600;          // carrying capacity
 
-    // ----- state (current parameter values) -----
-    let r = 0.8;
-    let K = 1000;
-    let N0 = 50;
+    // derived stats (used for births/deaths display only)
+    function updateBirthDeathLabels() {
+      // mimic NetLogo style: births ~ r * N (initial) / 10? Just for visual consistency
+      const approxBirths = Math.round(r * N0 * 0.6);
+      const approxDeaths = Math.round(r * N0 * 0.1);
+      document.getElementById('birthsDisplay').textContent = Math.min(approxBirths, 20);
+      document.getElementById('deathsDisplay').textContent = Math.max(1, Math.min(approxDeaths, 10));
+    }
 
-    // ----- chart instance -----
-    let chart;
+    // ---------- world canvas (agent dots) ----------
+    const canvas = document.getElementById('worldCanvas');
+    const ctx = canvas.getContext('2d');
+    const worldWidth = 500, worldHeight = 300;
 
-    // ----- helper: compute logistic curve using RK4 (accurate) -----
+    // agent representation: store positions for current population
+    let agents = [];        // array of {x, y}
+
+    // ---- logistic curve helper (RK4 for smoothness, same as previous) ----
+    const T_MAX = 30;       // time range for charts
+    const STEPS = 200;
+    const DT = T_MAX / STEPS;
+
     function computeLogisticCurve(rVal, KVal, N0Val) {
       const times = [];
-      const populations = [];
-
-      // ensure N0 is within (0, K] — but slider ensures N0 <= 500 and K >= 200, so always < K.
-      // edge case: if N0 == K (impossible with sliders, but safe)
-      let N = Math.min(N0Val, KVal * 0.999); // avoid exactly K if slider glitch
-
+      const pops = [];
+      let N = N0Val;
       for (let i = 0; i <= STEPS; i++) {
         const t = i * DT;
         times.push(t);
-        populations.push(N);
-
+        pops.push(N);
         // RK4 step for dN/dt = r * N * (1 - N/K)
         const f = (n) => rVal * n * (1 - n / KVal);
-
         const k1 = f(N);
         const k2 = f(N + 0.5 * DT * k1);
         const k3 = f(N + 0.5 * DT * k2);
         const k4 = f(N + DT * k3);
-
         N = N + (DT / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
-
-        // clamp to avoid tiny overshoot due to numerical error
         if (N > KVal) N = KVal;
         if (N < 0) N = 0;
       }
-
-      return { times, populations };
+      return { times, pops };
     }
 
-    // ----- compute derived metrics (for stats) -----
-    function computeMetrics(rVal, KVal, N0Val) {
-      // time to reach K/2 (half carrying capacity) — we find from computed curve
-      const { times, populations } = computeLogisticCurve(rVal, KVal, N0Val);
-      const halfK = KVal / 2;
+    // ---- draw agents on canvas ----
+    function drawAgents() {
+      ctx.clearRect(0, 0, worldWidth, worldHeight);
+      // dark background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, worldWidth, worldHeight);
 
-      let timeToHalf = null;
-      for (let i = 0; i < populations.length; i++) {
-        if (populations[i] >= halfK) {
-          if (i === 0) timeToHalf = 0;
-          else {
-            // linear interpolation for better precision
-            const prevN = populations[i-1];
-            const currN = populations[i];
-            if (currN !== prevN) {
-              const frac = (halfK - prevN) / (currN - prevN);
-              timeToHalf = times[i-1] + frac * DT;
-            } else {
-              timeToHalf = times[i];
-            }
-          }
-          break;
+      // draw each agent as a small red dot (like NetLogo "red" turtles)
+      ctx.shadowColor = '#ff8888';
+      ctx.shadowBlur = 6;
+      for (let a of agents) {
+        // random-ish but smooth flicker: slight color variation
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, 3.2, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ff3a3a';
+        ctx.fill();
+        // tiny highlight
+        ctx.shadowBlur = 4;
+      }
+      ctx.shadowBlur = 0;
+      // add a subtle grid or nothing – NetLogo world is plain black
+    }
+
+    // ---- generate agents from population size (scaled for visual clarity) ----
+    // The world is 500x300, we want up to ~300 dots to be visible but not overcrowded.
+    // We'll map population N (0..K) to a number of dots between 0 and 300.
+    function updateAgentsFromPopulation(population) {
+      // scaling: at K=600, show max 280 dots (so it's not too dense)
+      const maxDots = 280;
+      const targetDots = Math.min(maxDots, Math.round((population / K) * maxDots * 1.3)); // slight boost
+      const currentDots = agents.length;
+      if (targetDots > currentDots) {
+        // add dots
+        for (let i = currentDots; i < targetDots; i++) {
+          agents.push({
+            x: Math.random() * (worldWidth - 12) + 6,
+            y: Math.random() * (worldHeight - 12) + 6
+          });
         }
+      } else if (targetDots < currentDots) {
+        // remove dots (prefer removing from the end)
+        agents.splice(targetDots, currentDots - targetDots);
       }
-      // if never reached (shouldn't happen since N0 may be > K/2? but we start from N0 which can be > K/2)
-      // Actually if N0 > K/2, timeToHalf is 0 — but we want the time from start, but it's already above half at t=0.
-      // For display, we indicate "already ≥ K/2" — we'll handle in formatting.
-      if (N0Val >= halfK) {
-        timeToHalf = 0;   // at time zero, population is already ≥ K/2
-      }
-
-      // Max growth rate (theoretical) = r * K / 4  (occurs at N = K/2)
-      const maxRate = (rVal * KVal) / 4;
-
-      return { timeToHalf, maxRate };
+      // if population is very low, clear
+      if (population < 1) agents = [];
+      drawAgents();
     }
 
-    // ----- update chart and stats -----
+    // ---- update all UI: charts, agents, tick display, birth/death ----
+    let chartSize, chartGrowth, chartPerCapita;
+
     function updateAll() {
-      const { times, populations } = computeLogisticCurve(r, K, N0);
-      const { timeToHalf, maxRate } = computeMetrics(r, K, N0);
+      // compute curves and derived quantities
+      const { times, pops } = computeLogisticCurve(r, K, N0);
+      const halfK = K / 2;
 
-      // Update chart data
-      chart.data.labels = times.map(t => t.toFixed(2));
-      chart.data.datasets[0].data = populations;
+      // ---- 1. Population Size Chart (N vs t) ----
+      chartSize.data.labels = times.map(t => t.toFixed(2));
+      chartSize.data.datasets[0].data = pops;
+      // adjust y-axis max
+      const maxPop = Math.max(K * 1.15, ...pops);
+      chartSize.options.scales.y.max = Math.ceil(maxPop / 100) * 100;
+      chartSize.update();
 
-      // Update y-axis suggestion (max y)
-      const yMax = Math.max(K * 1.1, ...populations) * 1.02;
-      chart.options.scales.y.max = Math.ceil(yMax / 100) * 100;
-      // Also update suggested max if needed
-      chart.options.scales.y.suggestedMax = yMax;
+      // ---- 2. Population Growth Rate (dN/dt vs N) ----
+      // dN/dt = r * N * (1 - N/K)
+      const growthRates = pops.map(N => r * N * (1 - N / K));
+      chartGrowth.data.labels = pops.map(n => n.toFixed(1));
+      chartGrowth.data.datasets[0].data = growthRates;
+      const maxGrowth = Math.max(...growthRates, 0);
+      chartGrowth.options.scales.y.max = Math.ceil(maxGrowth * 1.15) || 10;
+      chartGrowth.update();
 
-      chart.update();
+      // ---- 3. Per Capita Growth Rate (dN/dt / N = r*(1 - N/K)) vs N ----
+      // For N=0 it's undefined, so we skip the first point (or set to r)
+      const perCapita = pops.map((N, idx) => {
+        if (N < 0.001) return r; // limit as N->0 is r
+        return r * (1 - N / K);
+      });
+      chartPerCapita.data.labels = pops.map(n => n.toFixed(1));
+      chartPerCapita.data.datasets[0].data = perCapita;
+      chartPerCapita.options.scales.y.max = Math.max(r * 1.2, ...perCapita) + 0.2;
+      chartPerCapita.options.scales.y.min = Math.min(0, ...perCapita) - 0.1;
+      chartPerCapita.update();
 
-      // Update stats display
-      const halfTimeDisplay = document.getElementById('halfTimeDisplay');
-      if (N0 >= K / 2) {
-        halfTimeDisplay.textContent = 'already ≥ K/2';
-      } else if (timeToHalf === null || timeToHalf === undefined) {
-        halfTimeDisplay.textContent = '—';
-      } else {
-        halfTimeDisplay.textContent = timeToHalf.toFixed(2) + ' t';
-      }
+      // ---- update world agents: reflect current population at the latest time? ----
+      // We'll use the initial population N0 for the static agent representation,
+      // because the simulation hasn't "run" – but we want the dots to match N0.
+      // However, the slider changes N0, so we show N0 dots.
+      updateAgentsFromPopulation(N0);
 
-      document.getElementById('maxRateDisplay').textContent = maxRate.toFixed(2) + ' / t';
+      // ---- tick display ----
+      document.getElementById('tickDisplay').textContent = `ticks: ${Math.round(N0)} (population)`;
 
-      // Update slider value labels
-      document.getElementById('rValue').textContent = r.toFixed(2);
-      document.getElementById('kValue').textContent = Math.round(K);
-      document.getElementById('n0Value').textContent = Math.round(N0);
+      // ---- update UI numbers for sliders ----
+      document.getElementById('n0ValDisplay').textContent = N0;
+      document.getElementById('rValDisplay').textContent = r.toFixed(2);
+      document.getElementById('kValDisplay').textContent = K;
+
+      // ---- births/deaths visual ----
+      updateBirthDeathLabels();
     }
 
-    // ----- initialize Chart.js -----
-    function initChart() {
-      const ctx = document.getElementById('logisticChart').getContext('2d');
-
-      // initial dummy data (will be replaced immediately)
-      const { times, populations } = computeLogisticCurve(r, K, N0);
-
-      chart = new Chart(ctx, {
+    // ---------- initialize charts with chart.js ----------
+    function initCharts() {
+      // population size chart
+      const ctxSize = document.getElementById('popSizeChart').getContext('2d');
+      chartSize = new Chart(ctxSize, {
         type: 'line',
         data: {
-          labels: times.map(t => t.toFixed(2)),
+          labels: [],
           datasets: [{
-            label: 'Population N(t)',
-            data: populations,
-            borderColor: '#1b6b99',
-            backgroundColor: 'rgba(27, 107, 153, 0.08)',
-            borderWidth: 3.5,
+            label: 'N(t)',
+            data: [],
+            borderColor: '#c0392b',   // red like the original red line
+            backgroundColor: 'transparent',
+            borderWidth: 2.5,
             pointRadius: 0,
-            pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#0b4b6b',
-            pointHoverBorderColor: '#ffffff',
-            pointHoverBorderWidth: 2,
-            fill: true,
-            tension: 0.2,        // slight smoothing, but logistic is smooth anyway
-            cubicInterpolationMode: 'monotone',
+            tension: 0.2,
+            fill: false,
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          animation: {
-            duration: 300,      // smooth transition when parameters change
-            easing: 'easeOutQuad'
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top',
-              align: 'end',
-              labels: {
-                boxWidth: 14,
-                boxHeight: 14,
-                borderRadius: 4,
-                usePointStyle: true,
-                pointStyle: 'line',
-                color: '#0f3b4f',
-                font: { weight: '500', size: 12 }
-              }
-            },
-            tooltip: {
-              backgroundColor: '#0b2b3b',
-              titleColor: '#e3f0fa',
-              bodyColor: '#cde1f0',
-              borderColor: '#3b8fc2',
-              borderWidth: 1,
-              padding: 10,
-              callbacks: {
-                label: (context) => {
-                  let label = context.dataset.label || '';
-                  let value = context.parsed.y;
-                  return `${label}: ${value.toFixed(1)}`;
-                }
-              }
-            }
-          },
+          animation: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
           scales: {
-            x: {
-              title: {
-                display: true,
-                text: 'Time (t)',
-                color: '#1e4a62',
-                font: { weight: '500', size: 12 }
-              },
-              grid: { color: '#d7e4ed', tickColor: '#b0c8d9' },
-              ticks: { maxTicksLimit: 12, color: '#2f566b' }
-            },
-            y: {
-              title: {
-                display: true,
-                text: 'Population size (N)',
-                color: '#1e4a62',
-                font: { weight: '500', size: 12 }
-              },
-              grid: { color: '#d7e4ed' },
-              ticks: { color: '#2f566b' },
-              beginAtZero: true,
-              suggestedMax: K * 1.1,
-              min: 0
-            }
-          },
-          hover: {
-            mode: 'index',
-            intersect: false,
-          },
-          elements: {
-            line: {
-              borderJoinStyle: 'round',
-              borderCapStyle: 'round'
-            }
+            x: { title: { display: true, text: 'Time (t)', font: { size: 8 } }, ticks: { font: { size: 7 } } },
+            y: { title: { display: true, text: 'Population Size (N)', font: { size: 8 } }, ticks: { font: { size: 7 } }, beginAtZero: true }
           }
         }
       });
 
-      // initial stat update
-      updateAll();
+      // population growth rate chart
+      const ctxGrowth = document.getElementById('growthRateChart').getContext('2d');
+      chartGrowth = new Chart(ctxGrowth, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'dN/dt',
+            data: [],
+            borderColor: '#c0392b',
+            backgroundColor: 'transparent',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            tension: 0.2,
+            fill: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            x: { title: { display: true, text: 'Population Size (N)', font: { size: 8 } }, ticks: { font: { size: 7 } } },
+            y: { title: { display: true, text: 'dN/dt', font: { size: 8 } }, ticks: { font: { size: 7 } }, beginAtZero: true }
+          }
+        }
+      });
+
+      // per capita growth rate chart
+      const ctxPerCapita = document.getElementById('perCapitaChart').getContext('2d');
+      chartPerCapita = new Chart(ctxPerCapita, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'dN/dt / N',
+            data: [],
+            borderColor: '#1e6fa3',  // blue for per capita
+            backgroundColor: 'transparent',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            tension: 0.1,
+            fill: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            x: { title: { display: true, text: 'Population Size (N)', font: { size: 8 } }, ticks: { font: { size: 7 } } },
+            y: { title: { display: true, text: 'dN/dt / N', font: { size: 8 } }, ticks: { font: { size: 7 } } }
+          }
+        }
+      });
     }
 
-    // ----- attach event listeners to sliders -----
+    // ---------- slider event handling ----------
     function bindSliders() {
+      const n0Slider = document.getElementById('n0Slider');
       const rSlider = document.getElementById('rSlider');
       const kSlider = document.getElementById('kSlider');
-      const n0Slider = document.getElementById('n0Slider');
+
+      n0Slider.addEventListener('input', (e) => {
+        N0 = parseFloat(e.target.value);
+        if (N0 > K) {
+          // clamp N0 to K-1 if it exceeds carrying capacity (slider max 300, K min 100, so safe)
+          N0 = Math.min(N0, K - 1);
+          n0Slider.value = N0;
+        }
+        updateAll();
+      });
 
       rSlider.addEventListener('input', (e) => {
         r = parseFloat(e.target.value);
@@ -488,33 +728,44 @@
 
       kSlider.addEventListener('input', (e) => {
         K = parseFloat(e.target.value);
-        // ensure N0 doesn't exceed K (slider max 500, but if K gets smaller than N0, clamp N0)
+        // adjust N0 if it exceeds new K
         if (N0 > K) {
-          N0 = Math.min(N0, K - 1);  // keep it below K
+          N0 = Math.min(N0, K - 1);
+          n0Slider.value = N0;
+        }
+        // also adjust slider max for N0? The original slider max 300, K might be 100 so we need to limit N0 slider.
+        // We'll dynamically set N0 slider max to min(300, K-1) to keep it valid.
+        const maxN0 = Math.min(300, K - 1);
+        n0Slider.max = maxN0;
+        if (N0 > maxN0) {
+          N0 = maxN0;
           n0Slider.value = N0;
         }
         updateAll();
       });
 
-      n0Slider.addEventListener('input', (e) => {
-        N0 = parseFloat(e.target.value);
-        // also ensure N0 doesn't exceed K (but slider max 500, K min 200, so often fine)
-        if (N0 > K) {
-          N0 = Math.max(1, Math.min(N0, K - 1));
-          n0Slider.value = N0;
-        }
-        updateAll();
-      });
-
-      // Also keep a check: when K slider changes, we might need to adjust N0 max dynamically? Not necessary,
-      // but we clamp N0 in update if it exceeds K.
-      // But we need to re-check after K changes. We do in the k slider event.
+      // initialize max for N0
+      const maxN0 = Math.min(300, K - 1);
+      n0Slider.max = maxN0;
     }
 
-    // ----- start everything -----
+    // ---------- start ----------
     window.addEventListener('load', () => {
-      initChart();
+      initCharts();
       bindSliders();
+
+      // set initial values
+      N0 = 10; r = 1.2; K = 600;
+      document.getElementById('n0Slider').value = N0;
+      document.getElementById('rSlider').value = r;
+      document.getElementById('kSlider').value = K;
+
+      // ensure N0 slider max respects K
+      const maxN0 = Math.min(300, K - 1);
+      document.getElementById('n0Slider').max = maxN0;
+
+      // initial agent dots (will be set by updateAll)
+      updateAll();
     });
 
   })();
