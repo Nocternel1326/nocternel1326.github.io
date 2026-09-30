@@ -32,22 +32,39 @@
       text-shadow: 0 1px 2px rgba(255, 248, 224, 0.8);
       pointer-events: auto;
     }
+    .biome-badge {
+      font-size: 0.8rem; font-weight: 700;
+      padding: 0.35rem 0.9rem; border-radius: 30px;
+      background: rgba(255, 253, 240, 0.95);
+      border: 2px solid #c8b87a;
+      color: #3a3020;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 6px rgba(120, 100, 40, 0.25);
+      pointer-events: auto;
+    }
 
     .world-container { flex: 1; width: 100%; height: 100%; position: relative; }
-    .world-canvas { display: block; width: 100%; height: 100%; background: #fdf8e0; }
+    .world-canvas { display: block; width: 100%; height: 100%; }
+
+    /* ---- Shared panel style ---- */
+    .panel {
+      background: rgba(245, 238, 200, 0.96);
+      border-radius: 14px;
+      box-shadow: 0 10px 25px -5px rgba(120, 100, 40, 0.5);
+      border: 2px solid #d4c48a;
+      z-index: 10; color: #3a3020;
+      backdrop-filter: blur(4px);
+    }
+    .panel h2 {
+      font-size: 0.9rem; font-weight: 700; margin: 0 0 0.6rem 0;
+      color: #3a3020; letter-spacing: 0.4px; text-transform: uppercase;
+    }
 
     /* ---- Controls panel ---- */
     .controls-panel {
       position: absolute; bottom: 1rem; left: 1rem; width: 330px;
-      background: rgba(245, 238, 200, 0.96);
-      border-radius: 14px; padding: 0.9rem 1.1rem 1rem 1.1rem;
-      box-shadow: 0 10px 25px -5px rgba(120, 100, 40, 0.5);
-      border: 2px solid #d4c48a; z-index: 10; color: #3a3020;
-      backdrop-filter: blur(4px);
-    }
-    .controls-panel h2 {
-      font-size: 0.9rem; font-weight: 700; margin: 0 0 0.6rem 0;
-      color: #3a3020; letter-spacing: 0.4px; text-transform: uppercase;
+      padding: 0.9rem 1.1rem 1rem 1.1rem;
     }
 
     .param-group { display: flex; flex-direction: column; gap: 0.55rem; }
@@ -109,11 +126,7 @@
     /* ---- Speed panel ---- */
     .speed-panel {
       position: absolute; bottom: 1rem; right: 1rem; width: 240px;
-      background: rgba(245, 238, 200, 0.96);
-      border-radius: 14px; padding: 0.7rem 1rem 0.9rem 1rem;
-      box-shadow: 0 10px 25px -5px rgba(120, 100, 40, 0.5);
-      border: 2px solid #d4c48a; z-index: 10; color: #3a3020;
-      backdrop-filter: blur(4px);
+      padding: 0.7rem 1rem 0.9rem 1rem;
     }
     .speed-panel .speed-label {
       display: flex; justify-content: space-between;
@@ -136,6 +149,86 @@
       background: #8a7a4a; border-radius: 50%; border: 2px solid #fff8d8;
       box-shadow: 0 1px 4px rgba(80, 60, 20, 0.5); cursor: pointer;
     }
+
+    /* ---- Disasters panel ---- */
+    .disasters-panel {
+      position: absolute; top: 1rem; right: 380px; width: 240px;
+      padding: 0.8rem 0.9rem 0.9rem 0.9rem;
+      transition: right 0.2s ease;
+    }
+    .charts-panel.expanded ~ .disasters-panel {
+      right: 660px;
+    }
+    .disasters-panel h2 {
+      font-size: 0.82rem;
+      display: flex; align-items: center; gap: 0.4rem;
+      margin-bottom: 0.5rem;
+    }
+    .disaster-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+    }
+    .disaster-btn {
+      background: #fff8e0;
+      border: 2px solid #c8b87a;
+      border-radius: 10px;
+      padding: 0.5rem 0.3rem 0.4rem 0.3rem;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s ease;
+      font-family: inherit;
+      color: #3a3020;
+      box-shadow: inset 0 1px 3px #ffffff, 0 2px 4px rgba(120, 100, 40, 0.2);
+    }
+    .disaster-btn:hover {
+      background: #fffdf0;
+      transform: translateY(-1px);
+      box-shadow: inset 0 1px 3px #ffffff, 0 4px 8px rgba(120, 100, 40, 0.3);
+    }
+    .disaster-btn:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 1px 3px #ffffff, 0 1px 2px rgba(120, 100, 40, 0.2);
+    }
+    .disaster-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .disaster-btn .d-icon { font-size: 1.3rem; display: block; line-height: 1.1; }
+    .disaster-btn .d-label {
+      font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 0.3px; text-transform: uppercase;
+      margin-top: 0.15rem;
+      display: block;
+    }
+    .disaster-btn .d-kill {
+      font-size: 0.6rem; color: #8a5a3a; font-weight: 600;
+      display: block;
+      margin-top: 0.05rem;
+    }
+
+    /* Active disaster banner */
+    .disaster-banner {
+      position: absolute;
+      top: 5.8rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(180, 40, 40, 0.92);
+      color: #fff8e0;
+      padding: 0.5rem 1.4rem;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 6px 16px rgba(80, 0, 0, 0.5);
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      text-transform: uppercase;
+    }
+    .disaster-banner.show { opacity: 1; }
 
     /* ---- Charts panel ---- */
     .charts-panel {
@@ -182,14 +275,10 @@
       align-self: flex-end; margin-bottom: 0.3rem;
     }
 
-    /* ---- Stats panel (pushed further down to avoid legend overlap) ---- */
+    /* ---- Stats panel ---- */
     .stats-panel {
       position: absolute; top: 6.3rem; left: 1rem; width: 300px;
-      background: rgba(255, 253, 240, 0.96);
-      border-radius: 12px; padding: 0.75rem 1rem 0.9rem 1rem;
-      border: 2px solid #d4c48a;
-      box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.45);
-      z-index: 10; color: #3a3020; backdrop-filter: blur(4px);
+      padding: 0.75rem 1rem 0.9rem 1rem;
       font-size: 0.82rem;
     }
     .stats-panel h3 {
@@ -207,7 +296,6 @@
       text-transform: none; letter-spacing: 0;
       white-space: nowrap;
     }
-
     .stat-row {
       display: flex; justify-content: space-between; align-items: center;
       padding: 0.22rem 0; border-bottom: 1px dotted #e0d5a8;
@@ -229,8 +317,11 @@
     .stat-row .stat-value.big {
       background: #c8e0f0; color: #0a3a5a; border-color: #6aa0c8;
     }
+    .stat-row .stat-value.warn {
+      background: #f0c8c8; color: #8a1a1a; border-color: #c88a8a;
+    }
 
-    /* ---- Legend (top-left, sits between title and stats) ---- */
+    /* ---- Legend ---- */
     .legend-panel {
       position: absolute; top: 3.6rem; left: 1rem;
       background: rgba(255, 253, 240, 0.92);
@@ -261,14 +352,20 @@
     .legend-x::before { transform: translate(-50%, -50%) rotate(45deg); }
     .legend-x::after  { transform: translate(-50%, -50%) rotate(-45deg); }
 
+    @media (max-width: 1300px) {
+      .disasters-panel { top: auto; bottom: 5.5rem; right: 1rem; width: 240px; }
+      .charts-panel.expanded ~ .disasters-panel { right: 1rem; }
+    }
     @media (max-width: 1100px) {
       .charts-panel { width: 280px; }
       .charts-panel.expanded { width: 480px; }
       .stats-panel { width: 260px; }
+      .disasters-panel { width: 220px; }
     }
     @media (max-width: 850px) {
       .charts-panel { display: none; }
       .chart-toggle { display: none; }
+      .disasters-panel { top: 1rem; bottom: auto; right: 1rem; width: 220px; }
     }
   </style>
 </head>
@@ -278,6 +375,7 @@
   <div class="sandbox">
     <div class="sandbox-header">
       <h1>🌿 Logistic Growth · Population in a Living Landscape</h1>
+      <span class="biome-badge" id="biomeBadge">🌾 Plain</span>
     </div>
     <div class="world-container">
       <canvas id="worldCanvas" class="world-canvas"></canvas>
@@ -291,8 +389,8 @@
     <div class="legend-item"><span class="legend-x"></span> Died</div>
   </div>
 
-  <!-- Stats panel (pushed below legend) -->
-  <div class="stats-panel">
+  <!-- Stats panel -->
+  <div class="stats-panel panel">
     <h3>📊 Statistics <span class="tick-mini" id="tickDisplay">t = 0.00 | N = 10</span></h3>
     <div class="stat-row">
       <span class="stat-label">Population / K</span>
@@ -330,8 +428,53 @@
       <span class="stat-label">Total deaths so far</span>
       <span class="stat-value" id="statTotalDeaths">0</span>
     </div>
+    <div class="stat-row">
+      <span class="stat-label">Disaster deaths</span>
+      <span class="stat-value warn" id="statDisasterDeaths">0</span>
+    </div>
   </div>
 
+  <!-- Disasters panel -->
+  <div class="disasters-panel panel">
+    <h2>⚠️ Abiotic Factors</h2>
+    <div class="disaster-grid">
+      <button class="disaster-btn" data-disaster="volcano" title="Volcanic eruption kills ~70% of population">
+        <span class="d-icon">🌋</span>
+        <span class="d-label">Volcano</span>
+        <span class="d-kill">-70%</span>
+      </button>
+      <button class="disaster-btn" data-disaster="tsunami" title="Tsunami kills ~55% of population">
+        <span class="d-icon">🌊</span>
+        <span class="d-label">Tsunami</span>
+        <span class="d-kill">-55%</span>
+      </button>
+      <button class="disaster-btn" data-disaster="wildfire" title="Wildfire kills ~45% of population">
+        <span class="d-icon">🔥</span>
+        <span class="d-label">Wildfire</span>
+        <span class="d-kill">-45%</span>
+      </button>
+      <button class="disaster-btn" data-disaster="drought" title="Drought kills ~30% of population">
+        <span class="d-icon">☀️</span>
+        <span class="d-label">Drought</span>
+        <span class="d-kill">-30%</span>
+      </button>
+      <button class="disaster-btn" data-disaster="plague" title="Plague kills ~40% of population">
+        <span class="d-icon">🦠</span>
+        <span class="d-label">Plague</span>
+        <span class="d-kill">-40%</span>
+      </button>
+      <button class="disaster-btn" data-disaster="earthquake" title="Earthquake kills ~35% of population">
+        <span class="d-icon">🌍</span>
+        <span class="d-label">Quake</span>
+        <span class="d-kill">-35%</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Active disaster banner -->
+  <div class="disaster-banner" id="disasterBanner"></div>
+
+  <!-- Charts panel -->
   <div class="charts-panel visible" id="chartsPanel">
     <button class="chart-toggle" id="chartToggle" title="Toggle chart size">⤢</button>
     <div class="chart-card">
@@ -348,7 +491,8 @@
     </div>
   </div>
 
-  <div class="controls-panel">
+  <!-- Controls panel -->
+  <div class="controls-panel panel">
     <h2>Population Parameters</h2>
     <div class="param-group">
       <div class="slider-item">
@@ -391,7 +535,8 @@
     </div>
   </div>
 
-  <div class="speed-panel">
+  <!-- Speed panel -->
+  <div class="speed-panel panel">
     <div class="speed-label">
       <span>Simulation Speed</span>
       <span id="speedValue">8</span>
@@ -419,16 +564,119 @@
   let population = 10;
   let totalBirths = 0;
   let totalDeaths = 0;
+  let disasterDeaths = 0;
 
   let timeToHalfK = null;
   let timeToNinetyK = null;
   let currentGrowthRate = 0;
   let currentPerCapita = 0;
 
+  // Track whether population was ≥ K/2 before a disaster (for threshold reset)
+  let wasAboveHalfK = false;
+  let wasAboveNinetyK = false;
+
   const historyTimes = [];
   const historyPops = [];
   const historyGrowth = [];
   const historyPerCapita = [];
+
+  // ---------- BIOME DEFINITIONS ----------
+  // Each biome has its own color palette, vegetation density, and lake distribution.
+  const BIOMES = {
+    plain: {
+      name: 'Plain',
+      icon: '🌾',
+      grassTop: '#e6f0c0', grassMid: '#d8e8a8', grassBot: '#c0d888',
+      lakeColor1: '#b8e0f0', lakeColor2: '#7ab8d8', lakeColor3: '#4a8aaa',
+      lakeBank: '#5a8a9a',
+      numLakes: [2, 3],
+      lakeRadius: [0.08, 0.16],
+      treeCount: 40,
+      treePines: 0.4, treeColorA: '#3a7a3a', treeColorB: '#2f6a2f',
+      shrubCount: 30, shrubColorA: '#4a8a3a', shrubColorB: '#5a9a4a',
+      rockCount: 20, flowerCount: 45,
+      flowerColors: ['#e8a0b8', '#f0d060', '#d0a0e0', '#ffffff'],
+      noiseColor: 'rgba(160, 200, 100, 0.10)'
+    },
+    beach: {
+      name: 'Beach',
+      icon: '🏖️',
+      grassTop: '#f5eec8', grassMid: '#ecdca0', grassBot: '#e0c880',
+      lakeColor1: '#b0e8f0', lakeColor2: '#6ac0dc', lakeColor3: '#3a90b8',
+      lakeBank: '#a8a080',
+      numLakes: [3, 5],
+      lakeRadius: [0.10, 0.20],
+      treeCount: 12,
+      treePines: 0.2, treeColorA: '#6a9a4a', treeColorB: '#5a8a3a',
+      shrubCount: 15, shrubColorA: '#8aaa5a', shrubColorB: '#7a9a4a',
+      rockCount: 12, flowerCount: 20,
+      flowerColors: ['#ffffff', '#f0e0a0', '#e8d0b0'],
+      noiseColor: 'rgba(200, 180, 120, 0.15)'
+    },
+    desert: {
+      name: 'Desert',
+      icon: '🏜️',
+      grassTop: '#f0e0b0', grassMid: '#e8d090', grassBot: '#dcb870',
+      lakeColor1: '#a8d8e8', lakeColor2: '#6aa8c0', lakeColor3: '#3a8098',
+      lakeBank: '#c0a878',
+      numLakes: [0, 1],
+      lakeRadius: [0.06, 0.10],
+      treeCount: 6,
+      treePines: 0.5, treeColorA: '#7a8a4a', treeColorB: '#6a7a3a',
+      shrubCount: 10, shrubColorA: '#a0a05a', shrubColorB: '#90904a',
+      rockCount: 30, flowerCount: 8,
+      flowerColors: ['#f0d0a0', '#e0c090'],
+      noiseColor: 'rgba(200, 170, 100, 0.18)'
+    },
+    rainforest: {
+      name: 'Rainforest',
+      icon: '🌴',
+      grassTop: '#a8d888', grassMid: '#88c070', grassBot: '#68a858',
+      lakeColor1: '#a0d8e0', lakeColor2: '#5aa0b8', lakeColor3: '#2a7898',
+      lakeBank: '#3a6a58',
+      numLakes: [2, 3],
+      lakeRadius: [0.08, 0.14],
+      treeCount: 75,
+      treePines: 0.25, treeColorA: '#1e6a2e', treeColorB: '#165024',
+      shrubCount: 55, shrubColorA: '#2a7a3a', shrubColorB: '#1e6a2e',
+      rockCount: 8, flowerCount: 70,
+      flowerColors: ['#e85070', '#f0a030', '#d060c0', '#ffffff', '#f0e040'],
+      noiseColor: 'rgba(60, 140, 60, 0.18)'
+    },
+    tundra: {
+      name: 'Tundra',
+      icon: '❄️',
+      grassTop: '#e0e8e0', grassMid: '#c8d4c8', grassBot: '#a8bca8',
+      lakeColor1: '#c8ecf0', lakeColor2: '#90c8d8', lakeColor3: '#5898b0',
+      lakeBank: '#8098a0',
+      numLakes: [2, 4],
+      lakeRadius: [0.10, 0.18],
+      treeCount: 10,
+      treePines: 0.9, treeColorA: '#3a6a4a', treeColorB: '#2a5a3a',
+      shrubCount: 18, shrubColorA: '#5a7a5a', shrubColorB: '#4a6a4a',
+      rockCount: 28, flowerCount: 15,
+      flowerColors: ['#c8d0f0', '#e0e8ff', '#ffffff'],
+      noiseColor: 'rgba(180, 200, 220, 0.20)'
+    },
+    savanna: {
+      name: 'Savanna',
+      icon: '🦒',
+      grassTop: '#e8dca0', grassMid: '#d8c880', grassBot: '#c0a860',
+      lakeColor1: '#b0d8e0', lakeColor2: '#70a8c0', lakeColor3: '#4a8898',
+      lakeBank: '#8a8060',
+      numLakes: [1, 2],
+      lakeRadius: [0.07, 0.13],
+      treeCount: 20,
+      treePines: 0.15, treeColorA: '#6a8a3a', treeColorB: '#5a7a2a',
+      shrubCount: 40, shrubColorA: '#8a9a4a', shrubColorB: '#7a8a3a',
+      rockCount: 22, flowerCount: 30,
+      flowerColors: ['#f0c060', '#e0a040', '#f0e0a0'],
+      noiseColor: 'rgba(200, 170, 90, 0.14)'
+    }
+  };
+
+  let currentBiome = 'plain';
+  let biomeData = BIOMES.plain;
 
   // ---------- world canvas ----------
   const canvas = document.getElementById('worldCanvas');
@@ -456,9 +704,20 @@
     return data[0] > 128;
   }
 
-  // ---------- generate natural terrain (lakes only, no river) ----------
+  // ---------- random helper ----------
+  function randRange(min, max) { return min + Math.random() * (max - min); }
+  function randInt(min, max) { return Math.floor(randRange(min, max + 1)); }
+  function pickBiome() {
+    const keys = Object.keys(BIOMES);
+    return keys[Math.floor(Math.random() * keys.length)];
+  }
+
+  // ---------- generate terrain based on current biome ----------
   function generateTerrain() {
-    // --- Water mask ---
+    biomeData = BIOMES[currentBiome];
+    document.getElementById('biomeBadge').textContent =
+      `${biomeData.icon} ${biomeData.name}`;
+
     const mask = document.createElement('canvas');
     mask.width = worldWidth;
     mask.height = worldHeight;
@@ -468,11 +727,14 @@
     mctx.fillRect(0, 0, worldWidth, worldHeight);
     mctx.fillStyle = '#ffffff';
 
-    // --- MULTIPLE LAKES (organic blobs, no river) ---
+    // --- Lakes (count and size depend on biome) ---
     const lakes = [];
-    const numLakes = 3 + Math.floor(Math.random() * 2);
+    const [minL, maxL] = biomeData.numLakes;
+    const numLakes = randInt(minL, maxL);
     for (let lI = 0; lI < numLakes; lI++) {
-      const radiusBase = Math.min(worldWidth, worldHeight) * (0.10 + Math.random() * 0.10);
+      const [minR, maxR] = biomeData.lakeRadius;
+      const radiusBase = Math.min(worldWidth, worldHeight) * randRange(minR, maxR);
+
       let cx, cy, tries = 0;
       do {
         cx = worldWidth * (0.15 + Math.random() * 0.7);
@@ -493,7 +755,6 @@
         });
       }
 
-      // Draw lake on mask
       mctx.beginPath();
       for (let i = 0; i < pts.length; i++) {
         const p0 = pts[(i - 1 + pts.length) % pts.length];
@@ -517,10 +778,10 @@
     terrain.waterMask = mask;
     terrain.waterCtx = mctx;
 
-    // --- Trees ---
+    // --- Trees (biome-dependent count and type mix) ---
     const trees = [];
     let attempts = 0;
-    while (trees.length < 40 && attempts < 500) {
+    while (trees.length < biomeData.treeCount && attempts < 800) {
       attempts++;
       const x = Math.random() * worldWidth;
       const y = Math.random() * worldHeight;
@@ -534,8 +795,8 @@
       trees.push({
         x, y,
         size: 16 + Math.random() * 14,
-        type: Math.random() > 0.4 ? 'pine' : 'round',
-        color: Math.random() > 0.5 ? '#3a7a3a' : '#2f6a2f',
+        type: Math.random() > (1 - biomeData.treePines) ? 'pine' : 'round',
+        color: Math.random() > 0.5 ? biomeData.treeColorA : biomeData.treeColorB,
         trunkH: 8 + Math.random() * 8
       });
     }
@@ -543,7 +804,7 @@
 
     // --- Shrubs ---
     const shrubs = [];
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < biomeData.shrubCount; i++) {
       const x = Math.random() * worldWidth;
       const y = Math.random() * worldHeight;
       if (isWater(x, y)) continue;
@@ -551,14 +812,14 @@
       shrubs.push({
         x, y,
         size: 8 + Math.random() * 8,
-        color: Math.random() > 0.5 ? '#4a8a3a' : '#5a9a4a'
+        color: Math.random() > 0.5 ? biomeData.shrubColorA : biomeData.shrubColorB
       });
     }
     terrain.features.shrubs = shrubs;
 
     // --- Rocks ---
     const rocks = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < biomeData.rockCount; i++) {
       const x = Math.random() * worldWidth;
       const y = Math.random() * worldHeight;
       if (isWater(x, y)) continue;
@@ -574,14 +835,14 @@
 
     // --- Flowers ---
     const flowers = [];
-    for (let i = 0; i < 45; i++) {
+    for (let i = 0; i < biomeData.flowerCount; i++) {
       const x = Math.random() * worldWidth;
       const y = Math.random() * worldHeight;
       if (isWater(x, y)) continue;
       if (y < 70) continue;
       flowers.push({
         x, y,
-        color: ['#e8a0b8', '#f0d060', '#d0a0e0', '#ffffff'][Math.floor(Math.random() * 4)],
+        color: biomeData.flowerColors[Math.floor(Math.random() * biomeData.flowerColors.length)],
         size: 2 + Math.random() * 2
       });
     }
@@ -598,18 +859,18 @@
     drawWorld();
   }
 
-  // ---------- draw natural terrain ----------
+  // ---------- draw terrain ----------
   function drawTerrain() {
-    // Base grass gradient
+    // Base grass gradient (biome palette)
     const grad = ctx.createLinearGradient(0, 0, 0, worldHeight);
-    grad.addColorStop(0, '#e6f0c0');
-    grad.addColorStop(0.35, '#d8e8a8');
-    grad.addColorStop(0.75, '#cce090');
-    grad.addColorStop(1, '#c0d888');
+    grad.addColorStop(0, biomeData.grassTop);
+    grad.addColorStop(0.35, biomeData.grassMid);
+    grad.addColorStop(0.75, biomeData.grassBot);
+    grad.addColorStop(1, biomeData.grassBot);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
-    // Subtle noise patches
+    // Noise patches (biome tint)
     ctx.save();
     for (let i = 0; i < 60; i++) {
       const seedX = (Math.sin(i * 12.9898) * 43758.5453) % 1;
@@ -620,15 +881,14 @@
       const ry = 30 + (Math.abs(seedY) * 50);
       ctx.beginPath();
       ctx.ellipse(x, y, rx, ry, 0, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(160, 200, 100, 0.10)';
+      ctx.fillStyle = biomeData.noiseColor;
       ctx.fill();
     }
     ctx.restore();
 
-    // --- Lakes (multiple, no shimmer circles) ---
+    // --- Lakes (biome palette) ---
     for (let lake of terrain.features.lakes) {
       const pts = lake.pts;
-      // Outer bank
       ctx.beginPath();
       for (let i = 0; i < pts.length; i++) {
         const p0 = pts[(i - 1 + pts.length) % pts.length];
@@ -643,20 +903,18 @@
         ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
       }
       ctx.closePath();
-      ctx.fillStyle = '#5a8a9a';
+      ctx.fillStyle = biomeData.lakeBank;
       ctx.fill();
 
-      // Water gradient
       const lakeGrad = ctx.createRadialGradient(
         lake.cx - lake.radius * 0.2, lake.cy - lake.radius * 0.2, 5,
         lake.cx, lake.cy, lake.radius * 1.2
       );
-      lakeGrad.addColorStop(0, '#b8e0f0');
-      lakeGrad.addColorStop(0.6, '#7ab8d8');
-      lakeGrad.addColorStop(1, '#4a8aaa');
+      lakeGrad.addColorStop(0, biomeData.lakeColor1);
+      lakeGrad.addColorStop(0.6, biomeData.lakeColor2);
+      lakeGrad.addColorStop(1, biomeData.lakeColor3);
       ctx.fillStyle = lakeGrad;
       ctx.fill();
-      // No shimmer circles drawn — removed per request
     }
 
     // Shrubs
@@ -875,6 +1133,76 @@
     return { births, deaths };
   }
 
+  // ---------- DISASTERS ----------
+  const DISASTERS = {
+    volcano:   { name: 'Volcanic Eruption', icon: '🌋', kill: 0.70 },
+    tsunami:   { name: 'Tsunami',           icon: '🌊', kill: 0.55 },
+    wildfire:  { name: 'Wildfire',          icon: '🔥', kill: 0.45 },
+    drought:   { name: 'Drought',           icon: '☀️', kill: 0.30 },
+    plague:    { name: 'Plague',            icon: '🦠', kill: 0.40 },
+    earthquake:{ name: 'Earthquake',        icon: '🌍', kill: 0.35 }
+  };
+
+  let disasterBannerTimeout = null;
+
+  function triggerDisaster(key) {
+    const d = DISASTERS[key];
+    if (!d) return;
+
+    const before = population;
+    const killed = Math.max(1, Math.round(before * d.kill));
+    const after = Math.max(0, before - killed);
+
+    // Apply to population
+    population = after;
+    totalDeaths += killed;
+    disasterDeaths += killed;
+
+    // Mark a proportionate number of agents as dying for visual feedback
+    const dotsBefore = agents.length;
+    const dotsKilled = Math.min(dotsBefore, Math.round(dotsBefore * d.kill));
+    // Mark random normal agents as dying
+    const normalIdx = [];
+    for (let i = 0; i < agents.length; i++) {
+      if (agents[i].state === 'normal') normalIdx.push(i);
+    }
+    for (let i = normalIdx.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [normalIdx[i], normalIdx[j]] = [normalIdx[j], normalIdx[i]];
+    }
+    const toMark = Math.min(dotsKilled, normalIdx.length);
+    for (let i = 0; i < toMark; i++) {
+      agents[normalIdx[i]].state = 'dying';
+    }
+
+    // If the disaster dropped us below thresholds, allow re-triggering those times
+    if (population < K / 2) { timeToHalfK = null; }
+    if (population < 0.9 * K) { timeToNinetyK = null; }
+
+    // Record the shock in the history so the charts show the drop
+    historyTimes.push(currentTime);
+    historyPops.push(population);
+    historyGrowth.push({ N: before, rate: -killed });
+    historyPerCapita.push({ N: before, rate: -killed / Math.max(1, before) });
+
+    // Visual feedback: banner
+    const banner = document.getElementById('disasterBanner');
+    banner.textContent = `${d.icon}  ${d.name}  ·  ${killed} died  ·  N = ${population}`;
+    banner.classList.add('show');
+    if (disasterBannerTimeout) clearTimeout(disasterBannerTimeout);
+    disasterBannerTimeout = setTimeout(() => {
+      banner.classList.remove('show');
+    }, 2400);
+
+    // Redraw immediately
+    drawWorld();
+    updateStats();
+    updateCharts();
+
+    document.getElementById('tickDisplay').textContent =
+      `t = ${currentTime.toFixed(2)} | N = ${population}`;
+  }
+
   // ---------- animation ----------
   function stepSimulation() {
     if (!isRunning) return;
@@ -923,6 +1251,7 @@
       currentPerCapita.toFixed(3);
     document.getElementById('statTotalBirths').textContent = totalBirths;
     document.getElementById('statTotalDeaths').textContent = totalDeaths;
+    document.getElementById('statDisasterDeaths').textContent = disasterDeaths;
   }
 
   // ---------- charts ----------
@@ -1047,6 +1376,7 @@
     population = N0;
     totalBirths = 0;
     totalDeaths = 0;
+    disasterDeaths = 0;
     timeToHalfK = null;
     timeToNinetyK = null;
     currentGrowthRate = 0;
@@ -1057,6 +1387,11 @@
     historyGrowth.length = 0;
     historyPerCapita.length = 0;
 
+    // Pick a new biome each Setup, and regenerate terrain
+    currentBiome = pickBiome();
+    generateTerrain();
+
+    // Reset agents on land
     agents = [];
     const dots = popToDots(N0);
     for (let i = 0; i < dots; i++) {
@@ -1162,11 +1497,21 @@
     });
   }
 
+  // ---------- disaster binding ----------
+  function bindDisasters() {
+    document.querySelectorAll('.disaster-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        triggerDisaster(btn.dataset.disaster);
+      });
+    });
+  }
+
   // ---------- start ----------
   window.addEventListener('load', () => {
     initCharts();
     bindSliders();
     bindChartToggle();
+    bindDisasters();
 
     N0 = 10; r = 1.2; K = 600;
     document.getElementById('n0Slider').value = N0;
