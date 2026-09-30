@@ -39,7 +39,7 @@
     /* ---- Extinction overlay ---- */
     .extinction-overlay {
       position: absolute; inset: 0;
-      background: rgba(30, 20, 10, 0.78);
+      background: rgba(30, 20, 10, 0.82);
       display: flex; align-items: center; justify-content: center;
       z-index: 50; opacity: 0; pointer-events: none;
       transition: opacity 0.5s ease;
@@ -50,10 +50,10 @@
       background: rgba(245, 238, 200, 0.98);
       border: 3px solid #8a5a3a;
       border-radius: 20px;
-      padding: 2.2rem 3rem;
+      padding: 2rem 2.6rem;
       text-align: center;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-      max-width: 520px;
+      max-width: 560px;
       animation: extPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     @keyframes extPop {
@@ -67,30 +67,50 @@
     }
     .extinction-card h2 {
       font-size: 2rem; font-weight: 800; color: #8a1a1a;
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 0.4rem 0;
       letter-spacing: 1px;
       text-transform: uppercase;
     }
-    .extinction-card p {
-      font-size: 1rem; color: #4a3f28;
-      margin: 0.3rem 0;
-      font-weight: 500;
+    .extinction-card .ext-sub {
+      font-size: 0.95rem; color: #6a5a3a;
+      margin: 0 0 1.2rem 0;
+      font-style: italic;
     }
-    .extinction-card .ext-stats {
-      margin: 1rem 0 1.4rem 0;
-      padding: 0.8rem;
+    .extinction-card .ext-section {
+      text-align: left;
       background: #fff8e0;
       border-radius: 10px;
       border: 1px dashed #c8b87a;
-      font-size: 0.9rem;
-      color: #3a3020;
+      padding: 0.8rem 1.1rem;
+      margin-bottom: 0.8rem;
     }
-    .extinction-card .ext-stats span {
+    .extinction-card .ext-section-title {
+      font-size: 0.7rem;
       font-weight: 700;
-      font-family: 'SF Mono', monospace;
+      color: #8a7a4a;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 0.4rem;
+      border-bottom: 1px dotted #d8c890;
+      padding-bottom: 0.25rem;
     }
+    .ext-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #3a3020;
+      padding: 0.18rem 0;
+    }
+    .ext-row span:first-child { font-weight: 500; }
+    .ext-row span:last-child {
+      font-family: 'SF Mono', monospace;
+      font-weight: 700;
+      color: #1a3a1a;
+    }
+    .ext-row.highlight span:last-child { color: #8a1a1a; }
     .extinction-card .ext-buttons {
       display: flex; gap: 0.8rem; justify-content: center;
+      margin-top: 1rem;
     }
 
     /* ---- Shared panel style ---- */
@@ -155,11 +175,11 @@
     .bd-box.births .bd-value { color: #1a7a1a; }
     .bd-box.deaths .bd-value { color: #b02020; }
 
-    .button-row { display: flex; gap: 0.6rem; justify-content: center; margin-top: 0.7rem; }
+    .button-row { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.7rem; }
     .btn {
       background: #8a7a4a; border: none; color: #fff8e0;
-      font-weight: 700; font-size: 0.85rem;
-      padding: 0.45rem 1.1rem; border-radius: 18px;
+      font-weight: 700; font-size: 0.82rem;
+      padding: 0.45rem 1rem; border-radius: 18px;
       letter-spacing: 0.4px;
       box-shadow: 0 3px 0 #5a4a2a, 0 4px 10px rgba(80, 60, 20, 0.4);
       cursor: pointer; transition: all 0.08s ease; border: 1px solid #a89a5a;
@@ -227,20 +247,117 @@
       height: 180px !important; max-height: 180px;
     }
 
-    .chart-toggle {
-      position: absolute; top: 1rem; right: 1rem; z-index: 12;
+    /* Chart panel action row (settings + resize) */
+    .chart-actions {
+      display: flex;
+      gap: 0.4rem;
+      align-self: flex-end;
+      margin-bottom: 0.3rem;
+    }
+    .chart-action-btn {
       background: rgba(245, 238, 200, 0.96);
-      border: 2px solid #d4c48a; border-radius: 10px;
-      width: 34px; height: 34px; cursor: pointer;
+      border: 2px solid #d4c48a;
+      border-radius: 10px;
+      width: 34px; height: 34px;
+      cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       font-size: 1rem; font-weight: 700; color: #5a4a2a;
       box-shadow: 0 4px 10px rgba(120, 100, 40, 0.3);
       transition: all 0.15s ease; padding: 0;
     }
-    .chart-toggle:hover { background: #fff8e0; transform: scale(1.05); }
-    .charts-panel.visible .chart-toggle {
-      position: relative; top: auto; right: auto;
-      align-self: flex-end; margin-bottom: 0.3rem;
+    .chart-action-btn:hover { background: #fff8e0; transform: scale(1.05); }
+    .chart-action-btn.active { background: #d8f0c0; border-color: #8ab86a; }
+
+    /* ---- Settings panel ---- */
+    .settings-panel {
+      position: absolute;
+      top: 4.6rem;
+      right: 1rem;
+      width: 300px;
+      padding: 0.9rem 1rem 1rem 1rem;
+      display: none;
+      z-index: 15;
+    }
+    .settings-panel.show { display: block; }
+    .settings-panel h2 {
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.7rem;
+      border-bottom: 1px dashed #c8b87a;
+      padding-bottom: 0.4rem;
+    }
+    .settings-close {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #8a7a4a;
+      padding: 0;
+      line-height: 1;
+    }
+    .settings-close:hover { color: #b02020; }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px dotted #e0d5a8;
+    }
+    .setting-item:last-child { border-bottom: none; }
+    .setting-item .setting-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #4a3f28;
+    }
+    .setting-item .setting-desc {
+      font-size: 0.65rem;
+      color: #8a7a5a;
+      font-weight: 400;
+      margin-top: 0.1rem;
+      display: block;
+    }
+
+    /* Toggle switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 22px;
+      flex-shrink: 0;
+      margin-left: 0.6rem;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #c8b87a;
+      border-radius: 22px;
+      transition: 0.2s;
+      border: 2px solid #a89a5a;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #fff8e0;
+      border-radius: 50%;
+      transition: 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #5a8a4a;
+      border-color: #4a7a3a;
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
     }
 
     /* ---- Left column stack ---- */
@@ -427,7 +544,8 @@
     }
     @media (max-width: 850px) {
       .charts-panel { display: none; }
-      .chart-toggle { display: none; }
+      .chart-actions { display: none; }
+      .settings-panel { top: 1rem; right: 1rem; }
       .left-stack { width: 280px; }
     }
   </style>
@@ -449,16 +567,35 @@
     <div class="extinction-card">
       <span class="ext-icon">💀</span>
       <h2>The Species is Extinct</h2>
-      <p>All individuals have perished.</p>
-      <div class="ext-stats">
-        Survived until <span id="extSurvivedTime">0.00</span> t<br>
-        Total births: <span id="extTotalBirths">0</span> &nbsp;·&nbsp;
-        Total deaths: <span id="extTotalDeaths">0</span><br>
-        Disaster deaths: <span id="extDisasterDeaths">0</span>
+      <p class="ext-sub">All individuals have perished.</p>
+
+      <div class="ext-section">
+        <div class="ext-section-title">Timeline</div>
+        <div class="ext-row"><span>Survived until</span><span id="extSurvivedTime">0.00 t</span></div>
+        <div class="ext-row"><span>Time to reach K/2</span><span id="extHalfTime">—</span></div>
+        <div class="ext-row"><span>Time to reach 90% K</span><span id="extNinetyTime">—</span></div>
+        <div class="ext-row"><span>Peak population</span><span id="extPeakPop">0</span></div>
       </div>
+
+      <div class="ext-section">
+        <div class="ext-section-title">Population Totals</div>
+        <div class="ext-row"><span>Total births</span><span id="extTotalBirths">0</span></div>
+        <div class="ext-row"><span>Natural deaths</span><span id="extNaturalDeaths">0</span></div>
+        <div class="ext-row highlight"><span>Disaster deaths</span><span id="extDisasterDeaths">0</span></div>
+        <div class="ext-row"><span>Net change</span><span id="extNetChange">0</span></div>
+      </div>
+
+      <div class="ext-section">
+        <div class="ext-section-title">Environment</div>
+        <div class="ext-row"><span>Biome</span><span id="extBiome">—</span></div>
+        <div class="ext-row"><span>Growth rate (r)</span><span id="extR">1.20</span></div>
+        <div class="ext-row"><span>Carrying capacity (K)</span><span id="extK">600</span></div>
+        <div class="ext-row"><span>Initial population (N₀)</span><span id="extN0">10</span></div>
+      </div>
+
       <div class="ext-buttons">
-        <button class="btn btn-restart" id="extRestartBtn">🔄 Restart (same terrain)</button>
-        <button class="btn btn-refresh" id="extRefreshBtn">🌍 Refresh (new terrain)</button>
+        <button class="btn btn-restart" id="extRestartBtn">Restart (same terrain)</button>
+        <button class="btn btn-refresh" id="extRefreshBtn">Refresh (new terrain)</button>
       </div>
     </div>
   </div>
@@ -466,7 +603,7 @@
   <!-- Left column stack -->
   <div class="left-stack">
 
-    <!-- Legend + Biome badge (kept on one row) -->
+    <!-- Legend + Biome badge -->
     <div class="legend-panel">
       <div class="legend-item"><span class="legend-swatch normal"></span> Alive</div>
       <div class="legend-item"><span class="legend-swatch born"></span> Born</div>
@@ -561,9 +698,57 @@
   <!-- Active disaster banner -->
   <div class="disaster-banner" id="disasterBanner"></div>
 
+  <!-- Settings panel -->
+  <div class="settings-panel panel" id="settingsPanel">
+    <h2>⚙️ Settings <button class="settings-close" id="settingsClose">✕</button></h2>
+    <div class="setting-item">
+      <div>
+        <span class="setting-label">Naturally Occurring Disasters</span>
+        <span class="setting-desc">Random disasters strike over time</span>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleDisasters">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-item">
+      <div>
+        <span class="setting-label">Lakes</span>
+        <span class="setting-desc">Water bodies in the landscape</span>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleLakes" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-item">
+      <div>
+        <span class="setting-label">Trees &amp; Shrubs</span>
+        <span class="setting-desc">Vegetation density</span>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleTrees" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-item">
+      <div>
+        <span class="setting-label">Rocks</span>
+        <span class="setting-desc">Boulders and stones</span>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="toggleRocks" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
   <!-- Charts panel -->
   <div class="charts-panel visible" id="chartsPanel">
-    <button class="chart-toggle" id="chartToggle" title="Toggle chart size">⤢</button>
+    <div class="chart-actions">
+      <button class="chart-action-btn" id="settingsBtn" title="Settings">⚙</button>
+      <button class="chart-action-btn" id="chartToggle" title="Toggle chart size">⤢</button>
+    </div>
     <div class="chart-card">
       <div class="chart-title"><span>Population Size</span><span>N vs t</span></div>
       <canvas id="popSizeChart"></canvas>
@@ -617,8 +802,8 @@
     </div>
 
     <div class="button-row">
-      <button class="btn btn-refresh" id="refreshBtn" title="New terrain, same parameters">🌍 Refresh</button>
-      <button class="btn btn-restart" id="restartBtn" title="Reset with same terrain and parameters">🔄 Restart</button>
+      <button class="btn btn-refresh" id="refreshBtn" title="New terrain, same parameters">Refresh</button>
+      <button class="btn btn-restart" id="restartBtn" title="Reset with same terrain and parameters">Restart</button>
       <button class="btn btn-go" id="goBtn">Go</button>
     </div>
   </div>
@@ -644,6 +829,17 @@
   let speedFactor = 8;
   const BASE_SPEED = 0.02;
 
+  // ---------- settings ----------
+  const settings = {
+    naturalDisasters: false,
+    showLakes: true,
+    showTrees: true,
+    showRocks: true
+  };
+
+  // Natural disaster scheduler
+  let nextDisasterTime = Infinity;
+
   // ---------- simulation state ----------
   let currentTime = 0;
   let isRunning = false;
@@ -653,6 +849,7 @@
   let totalBirths = 0;
   let totalDeaths = 0;
   let disasterDeaths = 0;
+  let peakPopulation = 10;
 
   let timeToHalfK = null;
   let timeToNinetyK = null;
@@ -750,7 +947,6 @@
     features: { lakes: [], trees: [], shrubs: [], rocks: [], flowers: [] }
   };
 
-  // Save terrain layout so Restart can reproduce the exact same map
   let savedTerrainSnapshot = null;
 
   function isWater(x, y) {
@@ -782,126 +978,132 @@
     mctx.fillRect(0, 0, worldWidth, worldHeight);
     mctx.fillStyle = '#ffffff';
 
-    // --- Lakes with randomized organic bank shapes ---
+    // --- Lakes (only if enabled) ---
     const lakes = [];
-    const [minL, maxL] = biomeData.numLakes;
-    const numLakes = randInt(minL, maxL);
-    for (let lI = 0; lI < numLakes; lI++) {
-      const [minR, maxR] = biomeData.lakeRadius;
-      const radiusBase = Math.min(worldWidth, worldHeight) * randRange(minR, maxR);
-      let cx, cy, tries = 0;
-      do {
-        cx = worldWidth * (0.15 + Math.random() * 0.7);
-        cy = worldHeight * (0.35 + Math.random() * 0.55);
-        tries++;
-      } while (tries < 40 && lakes.some(L =>
-        Math.hypot(cx - L.cx, cy - L.cy) < (radiusBase + L.radius) * 1.35
-      ));
+    if (settings.showLakes) {
+      const [minL, maxL] = biomeData.numLakes;
+      const numLakes = randInt(minL, maxL);
+      for (let lI = 0; lI < numLakes; lI++) {
+        const [minR, maxR] = biomeData.lakeRadius;
+        const radiusBase = Math.min(worldWidth, worldHeight) * randRange(minR, maxR);
+        let cx, cy, tries = 0;
+        do {
+          cx = worldWidth * (0.15 + Math.random() * 0.7);
+          cy = worldHeight * (0.35 + Math.random() * 0.55);
+          tries++;
+        } while (tries < 40 && lakes.some(L =>
+          Math.hypot(cx - L.cx, cy - L.cy) < (radiusBase + L.radius) * 1.35
+        ));
 
-      // Each lake gets its OWN random wave parameters for the organic bank shape.
-      // This means the "dark circles" (the outer bank) vary in shape every time.
-      const numPts = randInt(10, 16);
-      const wave1Amp = 0.25 + Math.random() * 0.25;   // was fixed at 0.4
-      const wave1Freq = randInt(2, 4);                 // was fixed at 3
-      const wave1Phase = Math.random() * Math.PI * 2;
-      const wave2Amp = 0.08 + Math.random() * 0.15;    // was fixed at 0.15
-      const wave2Freq = randInt(5, 9);                 // was fixed at 7
-      const wave2Phase = Math.random() * Math.PI * 2;
-      const yScale = 0.65 + Math.random() * 0.25;      // vertical ellipse factor
+        const numPts = randInt(10, 16);
+        const wave1Amp = 0.25 + Math.random() * 0.25;
+        const wave1Freq = randInt(2, 4);
+        const wave1Phase = Math.random() * Math.PI * 2;
+        const wave2Amp = 0.08 + Math.random() * 0.15;
+        const wave2Freq = randInt(5, 9);
+        const wave2Phase = Math.random() * Math.PI * 2;
+        const yScale = 0.65 + Math.random() * 0.25;
 
-      const pts = [];
-      for (let i = 0; i < numPts; i++) {
-        const ang = (i / numPts) * Math.PI * 2;
-        const rVar = radiusBase * (
-          0.7
-          + wave1Amp * Math.sin(ang * wave1Freq + wave1Phase)
-          + wave2Amp * Math.sin(ang * wave2Freq + wave2Phase)
-        );
-        pts.push({
-          x: cx + Math.cos(ang) * rVar,
-          y: cy + Math.sin(ang) * rVar * yScale
-        });
+        const pts = [];
+        for (let i = 0; i < numPts; i++) {
+          const ang = (i / numPts) * Math.PI * 2;
+          const rVar = radiusBase * (
+            0.7
+            + wave1Amp * Math.sin(ang * wave1Freq + wave1Phase)
+            + wave2Amp * Math.sin(ang * wave2Freq + wave2Phase)
+          );
+          pts.push({
+            x: cx + Math.cos(ang) * rVar,
+            y: cy + Math.sin(ang) * rVar * yScale
+          });
+        }
+
+        mctx.beginPath();
+        for (let i = 0; i < pts.length; i++) {
+          const p0 = pts[(i - 1 + pts.length) % pts.length];
+          const p1 = pts[i];
+          const p2 = pts[(i + 1) % pts.length];
+          const p3 = pts[(i + 2) % pts.length];
+          if (i === 0) mctx.moveTo(p1.x, p1.y);
+          const cp1x = p1.x + (p2.x - p0.x) / 6;
+          const cp1y = p1.y + (p2.y - p0.y) / 6;
+          const cp2x = p2.x - (p3.x - p1.x) / 6;
+          const cp2y = p2.y - (p3.y - p1.y) / 6;
+          mctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
+        mctx.closePath();
+        mctx.fill();
+
+        lakes.push({ cx, cy, radius: radiusBase, pts });
       }
-
-      mctx.beginPath();
-      for (let i = 0; i < pts.length; i++) {
-        const p0 = pts[(i - 1 + pts.length) % pts.length];
-        const p1 = pts[i];
-        const p2 = pts[(i + 1) % pts.length];
-        const p3 = pts[(i + 2) % pts.length];
-        if (i === 0) mctx.moveTo(p1.x, p1.y);
-        const cp1x = p1.x + (p2.x - p0.x) / 6;
-        const cp1y = p1.y + (p2.y - p0.y) / 6;
-        const cp2x = p2.x - (p3.x - p1.x) / 6;
-        const cp2y = p2.y - (p3.y - p1.y) / 6;
-        mctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-      }
-      mctx.closePath();
-      mctx.fill();
-
-      lakes.push({ cx, cy, radius: radiusBase, pts });
     }
     terrain.features.lakes = lakes;
 
     terrain.waterMask = mask;
     terrain.waterCtx = mctx;
 
-    // --- Trees ---
+    // --- Trees (only if enabled) ---
     const trees = [];
-    let attempts = 0;
-    while (trees.length < biomeData.treeCount && attempts < 800) {
-      attempts++;
-      const x = Math.random() * worldWidth;
-      const y = Math.random() * worldHeight;
-      if (isWater(x, y)) continue;
-      if (y < 70) continue;
-      let tooClose = false;
-      for (let t of trees) {
-        if (Math.hypot(x - t.x, y - t.y) < 35) { tooClose = true; break; }
+    if (settings.showTrees) {
+      let attempts = 0;
+      while (trees.length < biomeData.treeCount && attempts < 800) {
+        attempts++;
+        const x = Math.random() * worldWidth;
+        const y = Math.random() * worldHeight;
+        if (isWater(x, y)) continue;
+        if (y < 70) continue;
+        let tooClose = false;
+        for (let t of trees) {
+          if (Math.hypot(x - t.x, y - t.y) < 35) { tooClose = true; break; }
+        }
+        if (tooClose) continue;
+        trees.push({
+          x, y,
+          size: 16 + Math.random() * 14,
+          type: Math.random() > (1 - biomeData.treePines) ? 'pine' : 'round',
+          color: Math.random() > 0.5 ? biomeData.treeColorA : biomeData.treeColorB,
+          trunkH: 8 + Math.random() * 8
+        });
       }
-      if (tooClose) continue;
-      trees.push({
-        x, y,
-        size: 16 + Math.random() * 14,
-        type: Math.random() > (1 - biomeData.treePines) ? 'pine' : 'round',
-        color: Math.random() > 0.5 ? biomeData.treeColorA : biomeData.treeColorB,
-        trunkH: 8 + Math.random() * 8
-      });
     }
     terrain.features.trees = trees;
 
-    // --- Shrubs ---
+    // --- Shrubs (part of Trees & Shrubs setting) ---
     const shrubs = [];
-    for (let i = 0; i < biomeData.shrubCount; i++) {
-      const x = Math.random() * worldWidth;
-      const y = Math.random() * worldHeight;
-      if (isWater(x, y)) continue;
-      if (y < 70) continue;
-      shrubs.push({
-        x, y,
-        size: 8 + Math.random() * 8,
-        color: Math.random() > 0.5 ? biomeData.shrubColorA : biomeData.shrubColorB
-      });
+    if (settings.showTrees) {
+      for (let i = 0; i < biomeData.shrubCount; i++) {
+        const x = Math.random() * worldWidth;
+        const y = Math.random() * worldHeight;
+        if (isWater(x, y)) continue;
+        if (y < 70) continue;
+        shrubs.push({
+          x, y,
+          size: 8 + Math.random() * 8,
+          color: Math.random() > 0.5 ? biomeData.shrubColorA : biomeData.shrubColorB
+        });
+      }
     }
     terrain.features.shrubs = shrubs;
 
-    // --- Rocks ---
+    // --- Rocks (only if enabled) ---
     const rocks = [];
-    for (let i = 0; i < biomeData.rockCount; i++) {
-      const x = Math.random() * worldWidth;
-      const y = Math.random() * worldHeight;
-      if (isWater(x, y)) continue;
-      if (y < 70) continue;
-      rocks.push({
-        x, y,
-        rx: 6 + Math.random() * 9,
-        ry: 4 + Math.random() * 6,
-        rot: Math.random() * Math.PI
-      });
+    if (settings.showRocks) {
+      for (let i = 0; i < biomeData.rockCount; i++) {
+        const x = Math.random() * worldWidth;
+        const y = Math.random() * worldHeight;
+        if (isWater(x, y)) continue;
+        if (y < 70) continue;
+        rocks.push({
+          x, y,
+          rx: 6 + Math.random() * 9,
+          ry: 4 + Math.random() * 6,
+          rot: Math.random() * Math.PI
+        });
+      }
     }
     terrain.features.rocks = rocks;
 
-    // --- Flowers ---
+    // --- Flowers (always present, but subtle) ---
     const flowers = [];
     for (let i = 0; i < biomeData.flowerCount; i++) {
       const x = Math.random() * worldWidth;
@@ -916,13 +1118,10 @@
     }
     terrain.features.flowers = flowers;
 
-    // Save snapshot for Restart
     saveTerrainSnapshot();
   }
 
-  // ---------- snapshot for Restart ----------
   function saveTerrainSnapshot() {
-    // Deep-copy lakes (including pts arrays) and simple feature lists
     savedTerrainSnapshot = {
       biome: currentBiome,
       lakes: terrain.features.lakes.map(L => ({
@@ -943,7 +1142,6 @@
     document.getElementById('biomeBadge').textContent =
       `${biomeData.icon} ${biomeData.name}`;
 
-    // Rebuild lakes
     terrain.features.lakes = savedTerrainSnapshot.lakes.map(L => ({
       cx: L.cx, cy: L.cy, radius: L.radius,
       pts: L.pts.map(p => ({ x: p.x, y: p.y }))
@@ -953,7 +1151,6 @@
     terrain.features.rocks = savedTerrainSnapshot.rocks.map(r => ({ ...r }));
     terrain.features.flowers = savedTerrainSnapshot.flowers.map(f => ({ ...f }));
 
-    // Rebuild the water mask from the restored lake shapes
     const mask = document.createElement('canvas');
     mask.width = worldWidth;
     mask.height = worldHeight;
@@ -1023,7 +1220,6 @@
     // Lakes
     for (let lake of terrain.features.lakes) {
       const pts = lake.pts;
-      // Outer bank
       ctx.beginPath();
       for (let i = 0; i < pts.length; i++) {
         const p0 = pts[(i - 1 + pts.length) % pts.length];
@@ -1041,7 +1237,6 @@
       ctx.fillStyle = '#5a8a9a';
       ctx.fill();
 
-      // Water gradient
       const lakeGrad = ctx.createRadialGradient(
         lake.cx - lake.radius * 0.2, lake.cy - lake.radius * 0.2, 5,
         lake.cx, lake.cy, lake.radius * 1.2
@@ -1232,6 +1427,8 @@
     population = N + births - deaths;
     if (population < 0) population = 0;
 
+    if (population > peakPopulation) peakPopulation = population;
+
     totalBirths += births;
     totalDeaths += deaths;
 
@@ -1249,26 +1446,34 @@
     return { births, deaths };
   }
 
-  // ---------- extinction check ----------
+  // ---------- extinction ----------
   function checkExtinction() {
     if (isExtinct) return true;
     if (population <= 0) {
       isExtinct = true;
       isRunning = false;
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
-        animationFrame = null;
-      }
+      if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
       document.getElementById('goBtn').classList.remove('running');
       document.getElementById('goBtn').textContent = 'Go';
 
-      // Populate the extinction card
-      document.getElementById('extSurvivedTime').textContent = currentTime.toFixed(2);
+      // Populate extinction card
+      document.getElementById('extSurvivedTime').textContent = currentTime.toFixed(2) + ' t';
+      document.getElementById('extHalfTime').textContent =
+        timeToHalfK !== null ? timeToHalfK.toFixed(2) + ' t' : 'never reached';
+      document.getElementById('extNinetyTime').textContent =
+        timeToNinetyK !== null ? timeToNinetyK.toFixed(2) + ' t' : 'never reached';
+      document.getElementById('extPeakPop').textContent = peakPopulation;
       document.getElementById('extTotalBirths').textContent = totalBirths;
-      document.getElementById('extTotalDeaths').textContent = totalDeaths;
+      document.getElementById('extNaturalDeaths').textContent = (totalDeaths - disasterDeaths);
       document.getElementById('extDisasterDeaths').textContent = disasterDeaths;
+      const net = totalBirths - totalDeaths;
+      document.getElementById('extNetChange').textContent = (net >= 0 ? '+' : '') + net;
+      document.getElementById('extBiome').textContent =
+        `${biomeData.icon} ${biomeData.name}`;
+      document.getElementById('extR').textContent = r.toFixed(2);
+      document.getElementById('extK').textContent = K;
+      document.getElementById('extN0').textContent = N0;
 
-      // Show overlay
       document.getElementById('extinctionOverlay').classList.add('show');
       drawWorld();
       updateStats();
@@ -1287,6 +1492,8 @@
     plague:    { name: 'Plague',            icon: '🦠', kill: 0.40 },
     earthquake:{ name: 'Earthquake',        icon: '🌍', kill: 0.35 }
   };
+
+  const DISASTER_KEYS = Object.keys(DISASTERS);
 
   let disasterBannerTimeout = null;
 
@@ -1338,6 +1545,26 @@
     checkExtinction();
   }
 
+  // ---------- natural disaster scheduling ----------
+  function scheduleNextNaturalDisaster() {
+    if (!settings.naturalDisasters) {
+      nextDisasterTime = Infinity;
+      return;
+    }
+    // Random interval: 5–15 time units
+    nextDisasterTime = currentTime + 5 + Math.random() * 10;
+  }
+
+  function checkNaturalDisaster() {
+    if (!settings.naturalDisasters) return;
+    if (isExtinct) return;
+    if (currentTime >= nextDisasterTime) {
+      const key = DISASTER_KEYS[Math.floor(Math.random() * DISASTER_KEYS.length)];
+      triggerDisaster(key);
+      scheduleNextNaturalDisaster();
+    }
+  }
+
   // ---------- animation ----------
   function stepSimulation() {
     if (!isRunning || isExtinct) return;
@@ -1348,6 +1575,8 @@
     const { births, deaths } = tick(dt);
     applyBirths(births);
     applyDeaths(deaths);
+
+    checkNaturalDisaster();
 
     drawWorld();
     updateStats();
@@ -1479,7 +1708,6 @@
   }
 
   // ---------- reset helpers ----------
-  // Common reset state (without regenerating terrain)
   function resetState() {
     isRunning = false;
     isExtinct = false;
@@ -1490,6 +1718,7 @@
 
     currentTime = 0;
     population = N0;
+    peakPopulation = N0;
     totalBirths = 0;
     totalDeaths = 0;
     disasterDeaths = 0;
@@ -1515,6 +1744,9 @@
     if (population >= K / 2) timeToHalfK = 0;
     if (population >= 0.9 * K) timeToNinetyK = 0;
 
+    // Schedule first natural disaster
+    scheduleNextNaturalDisaster();
+
     drawWorld();
     updateStats();
     updateCharts();
@@ -1523,19 +1755,14 @@
     document.getElementById('deathsDisplay').textContent = '0';
   }
 
-  // Refresh: pick a NEW biome, generate NEW terrain, then reset
   function refreshSimulation() {
     currentBiome = pickBiome();
     generateTerrain();
     resetState();
   }
 
-  // Restart: keep the SAME biome and SAME terrain, only reset state
   function restartSimulation() {
-    if (savedTerrainSnapshot) {
-      // If canvas resized, regenerate the snapshot at the current size
-      restoreTerrainSnapshot();
-    }
+    if (savedTerrainSnapshot) restoreTerrainSnapshot();
     resetState();
   }
 
@@ -1566,7 +1793,7 @@
       N0 = parseFloat(e.target.value);
       if (N0 > K) { N0 = Math.min(N0, K - 1); n0Slider.value = N0; }
       document.getElementById('n0ValDisplay').textContent = N0;
-      restartSimulation();  // keep terrain, just reset
+      restartSimulation();
     });
 
     rSlider.addEventListener('input', (e) => {
@@ -1621,11 +1848,56 @@
     });
   }
 
+  function bindSettings() {
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const settingsClose = document.getElementById('settingsClose');
+
+    settingsBtn.addEventListener('click', () => {
+      settingsPanel.classList.toggle('show');
+      settingsBtn.classList.toggle('active');
+    });
+
+    settingsClose.addEventListener('click', () => {
+      settingsPanel.classList.remove('show');
+      settingsBtn.classList.remove('active');
+    });
+
+    document.getElementById('toggleDisasters').addEventListener('change', (e) => {
+      settings.naturalDisasters = e.target.checked;
+      if (settings.naturalDisasters) {
+        // Schedule first one soon
+        nextDisasterTime = currentTime + 3 + Math.random() * 5;
+      } else {
+        nextDisasterTime = Infinity;
+      }
+    });
+
+    document.getElementById('toggleLakes').addEventListener('change', (e) => {
+      settings.showLakes = e.target.checked;
+      generateTerrain();
+      drawWorld();
+    });
+
+    document.getElementById('toggleTrees').addEventListener('change', (e) => {
+      settings.showTrees = e.target.checked;
+      generateTerrain();
+      drawWorld();
+    });
+
+    document.getElementById('toggleRocks').addEventListener('change', (e) => {
+      settings.showRocks = e.target.checked;
+      generateTerrain();
+      drawWorld();
+    });
+  }
+
   window.addEventListener('load', () => {
     initCharts();
     bindSliders();
     bindChartToggle();
     bindDisasters();
+    bindSettings();
 
     N0 = 10; r = 1.2; K = 600;
     document.getElementById('n0Slider').value = N0;
@@ -1639,13 +1911,8 @@
     document.getElementById('n0Slider').max = Math.min(500, K - 1);
 
     resizeCanvas();
-    window.addEventListener('resize', () => {
-      // On resize, we need to regenerate terrain to fit new dimensions
-      // and update the snapshot so Restart still works
-      resizeCanvas();
-    });
+    window.addEventListener('resize', resizeCanvas);
 
-    // Initial state
     currentBiome = pickBiome();
     generateTerrain();
     resetState();
@@ -1654,7 +1921,6 @@
     document.getElementById('restartBtn').addEventListener('click', restartSimulation);
     document.getElementById('goBtn').addEventListener('click', toggleGo);
 
-    // Buttons inside extinction overlay
     document.getElementById('extRestartBtn').addEventListener('click', restartSimulation);
     document.getElementById('extRefreshBtn').addEventListener('click', refreshSimulation);
   });
