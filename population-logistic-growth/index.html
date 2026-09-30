@@ -8,233 +8,394 @@
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif; }
 
-    body {
-      background: #fdf8e0;
-      min-height: 100vh;
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: #fdf8e0;
+    }
+
+    /* ---- Full-screen layout ---- */
+    .app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: #fdf8e0;
+    }
+
+    /* ---- Main sandbox fills the whole screen ---- */
+    .sandbox {
+      position: absolute;
+      inset: 0;
+      background: #fdf8e0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sandbox-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 0.75rem 1.25rem;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
+      justify-content: space-between;
+      z-index: 5;
+      pointer-events: none;
     }
 
-    .netlogo-panel {
-      background: #f5eec8;
-      border-radius: 1.5rem;
-      padding: 1.5rem 2rem 1.8rem 2rem;
-      max-width: 1400px;
-      width: fit-content;
-      box-shadow: 0 20px 30px -10px rgba(120, 100, 40, 0.5);
-      border: 2px solid #d4c48a;
+    .sandbox-header h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #3a3020;
+      margin: 0;
+      letter-spacing: 0.2px;
+      text-shadow: 0 1px 2px rgba(255, 248, 224, 0.8);
+      pointer-events: auto;
     }
 
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; color: #3a3020; }
-    .title-section { display: flex; align-items: center; gap: 0.75rem; }
-    .title-section h1 { font-size: 1.5rem; font-weight: 600; margin: 0; color: #3a3020; letter-spacing: 0.2px; }
-
-    .speed-row {
-      display: flex; align-items: center; gap: 1rem;
-      margin: 0.5rem 0 1.2rem 0; color: #4a3f28; font-size: 0.9rem; font-weight: 500;
-    }
-    .speed-row input {
-      flex: 1; height: 8px; -webkit-appearance: none;
-      background: #d4c48a; border-radius: 10px; cursor: pointer; border: 1px solid #b8a86a;
-    }
-    .speed-row input::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 20px; height: 20px;
-      background: #8a7a4a; border-radius: 50%; border: 2px solid #fff8d8;
-      box-shadow: 0 2px 6px rgba(80, 60, 20, 0.5); cursor: pointer;
-    }
-
-    .world-and-params {
-      display: flex; gap: 2rem; align-items: flex-start;
-      flex-wrap: wrap; justify-content: center;
+    .sandbox-header .tick-info {
+      font-family: 'SF Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #3a3020;
+      background: rgba(255, 248, 224, 0.85);
+      padding: 0.35rem 0.9rem;
+      border-radius: 20px;
+      border: 2px solid #c8b87a;
+      box-shadow: 0 2px 6px rgba(120, 100, 40, 0.2);
+      pointer-events: auto;
     }
 
     .world-container {
-      background: #fdf8e0; border-radius: 12px; padding: 6px;
-      box-shadow: inset 0 0 12px #d4cba6, 0 8px 12px rgba(120, 100, 40, 0.4);
-      border: 2px solid #c8b87a;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
     }
+
     .world-canvas {
-      display: block; width: 500px; height: 300px;
-      border-radius: 6px; background: #fdf8e0;
-    }
-    .tick-label {
-      margin-top: 8px; font-family: 'SF Mono', monospace;
-      font-size: 0.85rem; color: #5a4a2a; padding-left: 6px; font-weight: 600;
-    }
-
-    .params-panel {
-      background: #efe6c0; border-radius: 12px;
-      padding: 1rem 1.5rem 1.2rem 1.5rem;
-      box-shadow: inset 0 1px 3px #fff8e0, 0 6px 10px rgba(120, 100, 40, 0.3);
-      border: 2px solid #d4c48a; min-width: 300px; color: #3a3020;
-    }
-    .params-panel h2 {
-      font-size: 1.2rem; font-weight: 600; text-align: center;
-      margin: 0 0 0.75rem 0; color: #3a3020; letter-spacing: 0.5px;
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #fdf8e0;
+      cursor: crosshair;
     }
 
-    .param-group { display: flex; flex-direction: column; gap: 0.8rem; }
-    .slider-item { display: flex; flex-direction: column; gap: 0.2rem; }
+    /* ---- Bottom-left corner: parameter controls ---- */
+    .controls-panel {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      width: 320px;
+      background: rgba(245, 238, 200, 0.96);
+      border-radius: 14px;
+      padding: 0.9rem 1.1rem 1rem 1.1rem;
+      box-shadow: 0 10px 25px -5px rgba(120, 100, 40, 0.5);
+      border: 2px solid #d4c48a;
+      z-index: 10;
+      color: #3a3020;
+      backdrop-filter: blur(4px);
+    }
+
+    .controls-panel h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin: 0 0 0.6rem 0;
+      color: #3a3020;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .param-group { display: flex; flex-direction: column; gap: 0.55rem; }
+
+    .slider-item { display: flex; flex-direction: column; gap: 0.15rem; }
     .slider-item .label-row {
       display: flex; justify-content: space-between;
-      font-size: 0.85rem; font-weight: 600; color: #4a3f28;
+      font-size: 0.78rem; font-weight: 600; color: #4a3f28;
     }
     .slider-item .label-row span:last-child {
       font-family: 'SF Mono', monospace; background: #fff8e0;
-      padding: 0.1rem 0.6rem; border-radius: 30px;
-      font-size: 0.8rem; border: 1px solid #c8b87a; color: #3a3020;
+      padding: 0.05rem 0.5rem; border-radius: 30px;
+      font-size: 0.75rem; border: 1px solid #c8b87a; color: #3a3020;
     }
     .slider-item input[type=range] {
       width: 100%; height: 6px; -webkit-appearance: none;
       background: #d4c48a; border-radius: 10px;
-      margin: 5px 0 2px; border: 1px solid #b8a86a;
+      margin: 2px 0; border: 1px solid #b8a86a;
+      cursor: pointer;
     }
     .slider-item input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 18px; height: 18px;
+      -webkit-appearance: none; width: 16px; height: 16px;
       background: #8a7a4a; border-radius: 50%; border: 2px solid #fff8d8;
-      box-shadow: 0 1px 5px rgba(80, 60, 20, 0.5); cursor: pointer;
+      box-shadow: 0 1px 4px rgba(80, 60, 20, 0.5); cursor: pointer;
     }
 
-    .birth-death-row { display: flex; gap: 0.8rem; margin-top: 1rem; justify-content: center; }
+    .birth-death-row {
+      display: flex; gap: 0.5rem; margin-top: 0.7rem; justify-content: stretch;
+    }
     .bd-box {
-      background: #fff8e0; border-radius: 8px; padding: 0.4rem 0.8rem;
+      flex: 1;
+      background: #fff8e0; border-radius: 8px; padding: 0.3rem 0.4rem;
       text-align: center; border: 2px solid #c8b87a;
       box-shadow: inset 0 1px 4px #ffffff, 0 2px 3px rgba(120, 100, 40, 0.2);
-      min-width: 80px;
     }
     .bd-box .bd-label {
-      font-size: 0.7rem; font-weight: 700; color: #5a4a2a;
+      font-size: 0.62rem; font-weight: 700; color: #5a4a2a;
       letter-spacing: 0.3px; text-transform: uppercase;
     }
     .bd-box .bd-value {
       font-family: 'SF Mono', monospace; font-weight: 700;
-      font-size: 1.2rem; color: #3a3020;
+      font-size: 1.1rem; color: #3a3020;
     }
     .bd-box.births .bd-value { color: #1a7a1a; }
     .bd-box.deaths .bd-value { color: #b02020; }
 
-    .button-row { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+    .button-row { display: flex; gap: 0.6rem; justify-content: center; margin-top: 0.7rem; }
     .btn {
       background: #8a7a4a; border: none; color: #fff8e0;
-      font-weight: 700; font-size: 0.95rem;
-      padding: 0.6rem 1.5rem; border-radius: 20px;
-      letter-spacing: 0.5px;
-      box-shadow: 0 4px 0 #5a4a2a, 0 5px 12px rgba(80, 60, 20, 0.4);
+      font-weight: 700; font-size: 0.85rem;
+      padding: 0.45rem 1.1rem; border-radius: 18px;
+      letter-spacing: 0.4px;
+      box-shadow: 0 3px 0 #5a4a2a, 0 4px 10px rgba(80, 60, 20, 0.4);
       cursor: pointer; transition: all 0.08s ease;
       border: 1px solid #a89a5a;
     }
     .btn:active {
-      transform: translateY(3px);
-      box-shadow: 0 1px 0 #5a4a2a, 0 5px 12px rgba(80, 60, 20, 0.4);
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #5a4a2a, 0 4px 10px rgba(80, 60, 20, 0.4);
     }
     .btn-setup { background: #a89a5a; }
     .btn-go { background: #5a8a4a; }
     .btn-go.running { background: #b04040; border-color: #d06060; }
 
-    .charts-row {
-      display: flex; flex-wrap: wrap; gap: 1.2rem;
-      margin-top: 1.8rem; justify-content: center;
+    /* ---- Bottom-right corner: speed slider ---- */
+    .speed-panel {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      width: 260px;
+      background: rgba(245, 238, 200, 0.96);
+      border-radius: 14px;
+      padding: 0.7rem 1rem 0.9rem 1rem;
+      box-shadow: 0 10px 25px -5px rgba(120, 100, 40, 0.5);
+      border: 2px solid #d4c48a;
+      z-index: 10;
+      color: #3a3020;
+      backdrop-filter: blur(4px);
     }
+    .speed-panel .speed-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #4a3f28;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 0.25rem;
+    }
+    .speed-panel .speed-label span:last-child {
+      font-family: 'SF Mono', monospace;
+      background: #fff8e0;
+      padding: 0.05rem 0.5rem;
+      border-radius: 30px;
+      border: 1px solid #c8b87a;
+      text-transform: none;
+    }
+    .speed-panel input[type=range] {
+      width: 100%; height: 7px; -webkit-appearance: none;
+      background: #d4c48a; border-radius: 10px;
+      border: 1px solid #b8a86a; cursor: pointer;
+    }
+    .speed-panel input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      background: #8a7a4a; border-radius: 50%; border: 2px solid #fff8d8;
+      box-shadow: 0 1px 4px rgba(80, 60, 20, 0.5); cursor: pointer;
+    }
+
+    /* ---- Top-right corner: charts ---- */
+    .charts-panel {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      z-index: 10;
+    }
+
     .chart-card {
-      background: #fffdf0; border-radius: 10px;
-      padding: 0.8rem 0.8rem 0.3rem 0.8rem;
-      box-shadow: 0 6px 12px rgba(120, 100, 40, 0.3);
-      border: 2px solid #d4c48a; flex: 1 1 240px; max-width: 280px;
+      background: rgba(255, 253, 240, 0.96);
+      border-radius: 12px;
+      padding: 0.55rem 0.7rem 0.3rem 0.7rem;
+      box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.45);
+      border: 2px solid #d4c48a;
+      backdrop-filter: blur(4px);
     }
     .chart-card .chart-title {
       display: flex; justify-content: space-between;
-      font-size: 0.9rem; font-weight: 700; color: #3a3020;
-      margin-bottom: 0.2rem; padding: 0 0.2rem;
+      font-size: 0.78rem; font-weight: 700; color: #3a3020;
+      margin-bottom: 0.15rem; padding: 0 0.15rem;
     }
     .chart-card .chart-title span:last-child { color: #8a7a4a; font-weight: 400; }
     .chart-card canvas {
-      width: 100% !important; height: 140px !important; max-height: 140px;
+      width: 100% !important;
+      height: 105px !important;
+      max-height: 105px;
+    }
+
+    /* ---- Legend for birth/death markers ---- */
+    .legend-panel {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(255, 253, 240, 0.92);
+      border-radius: 12px;
+      padding: 0.6rem 0.9rem;
+      border: 2px solid #d4c48a;
+      box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.4);
+      z-index: 10;
+      color: #3a3020;
+      font-size: 0.8rem;
+      backdrop-filter: blur(4px);
+    }
+    .legend-panel .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.2rem 0;
+      font-weight: 600;
+    }
+    .legend-swatch {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .legend-swatch.normal { background: #111111; width: 10px; height: 10px; margin: 0 2px; }
+    .legend-swatch.born { background: #22aa22; }
+    .legend-x {
+      position: relative;
+      width: 14px; height: 14px;
+      flex-shrink: 0;
+    }
+    .legend-x::before, .legend-x::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 14px; height: 2.5px;
+      background: #cc2222;
+      transform-origin: center;
+    }
+    .legend-x::before { transform: translate(-50%, -50%) rotate(45deg); }
+    .legend-x::after  { transform: translate(-50%, -50%) rotate(-45deg); }
+
+    /* Responsive tweaks */
+    @media (max-width: 1000px) {
+      .charts-panel { width: 240px; }
+      .controls-panel { width: 280px; }
+      .speed-panel { width: 220px; }
+    }
+    @media (max-width: 760px) {
+      .charts-panel { display: none; }
     }
   </style>
 </head>
 <body>
-<div class="netlogo-panel">
-  <div class="header">
-    <div class="title-section">
+<div class="app">
+
+  <!-- Main sandbox -->
+  <div class="sandbox">
+    <div class="sandbox-header">
       <h1>🌿 Logistic Growth · Real Population Simulation</h1>
+      <div class="tick-info" id="tickDisplay">t = 0.00  |  N = 10</div>
+    </div>
+    <div class="world-container">
+      <canvas id="worldCanvas" class="world-canvas"></canvas>
     </div>
   </div>
 
-  <div class="speed-row">
-    <span style="min-width:50px;">Speed</span>
-    <input type="range" id="speedSlider" min="1" max="20" value="8" step="1">
-    <span id="speedValue" style="min-width: 45px; font-family: monospace;">8</span>
+  <!-- Legend (top-left, under title) -->
+  <div class="legend-panel" style="top: 3.2rem;">
+    <div class="legend-row"><span class="legend-swatch normal"></span> Living individual</div>
+    <div class="legend-row"><span class="legend-swatch born"></span> Born this tick</div>
+    <div class="legend-row"><span class="legend-x"></span> Died this tick</div>
   </div>
 
-  <div class="world-and-params">
-    <div>
-      <div class="world-container">
-        <canvas id="worldCanvas" class="world-canvas" width="500" height="300"></canvas>
-      </div>
-      <div class="tick-label" id="tickDisplay">t = 0.00  |  N = 10</div>
-    </div>
-
-    <div class="params-panel">
-      <h2>Population Parameters</h2>
-      <div class="param-group">
-        <div class="slider-item">
-          <div class="label-row">
-            <span>Initial Population (N₀)</span>
-            <span id="n0ValDisplay">10</span>
-          </div>
-          <input type="range" id="n0Slider" min="1" max="300" value="10" step="1">
-        </div>
-        <div class="slider-item">
-          <div class="label-row">
-            <span>Growth Rate (r)</span>
-            <span id="rValDisplay">1.20</span>
-          </div>
-          <input type="range" id="rSlider" min="0.1" max="1.5" value="1.2" step="0.01">
-        </div>
-        <div class="slider-item">
-          <div class="label-row">
-            <span>Carrying Capacity (K)</span>
-            <span id="kValDisplay">600</span>
-          </div>
-          <input type="range" id="kSlider" min="100" max="1000" value="600" step="10">
-        </div>
-      </div>
-
-      <div class="birth-death-row">
-        <div class="bd-box births">
-          <div class="bd-label">Births/tick</div>
-          <div class="bd-value" id="birthsDisplay">0</div>
-        </div>
-        <div class="bd-box deaths">
-          <div class="bd-label">Deaths/tick</div>
-          <div class="bd-value" id="deathsDisplay">0</div>
-        </div>
-      </div>
-
-      <div class="button-row">
-        <button class="btn btn-setup" id="setupBtn">Setup</button>
-        <button class="btn btn-go" id="goBtn">Go</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="charts-row">
+  <!-- Charts (top-right corner) -->
+  <div class="charts-panel">
     <div class="chart-card">
       <div class="chart-title"><span>Population Size</span><span>☰</span></div>
-      <canvas id="popSizeChart" width="240" height="140"></canvas>
+      <canvas id="popSizeChart"></canvas>
     </div>
     <div class="chart-card">
       <div class="chart-title"><span>Population Growth Rate</span><span>☰</span></div>
-      <canvas id="growthRateChart" width="240" height="140"></canvas>
+      <canvas id="growthRateChart"></canvas>
     </div>
     <div class="chart-card">
       <div class="chart-title"><span>Per Capita Growth Rate</span><span>☰</span></div>
-      <canvas id="perCapitaChart" width="240" height="140"></canvas>
+      <canvas id="perCapitaChart"></canvas>
     </div>
   </div>
+
+  <!-- Controls (bottom-left corner) -->
+  <div class="controls-panel">
+    <h2>Population Parameters</h2>
+    <div class="param-group">
+      <div class="slider-item">
+        <div class="label-row">
+          <span>Initial Population (N₀)</span>
+          <span id="n0ValDisplay">10</span>
+        </div>
+        <input type="range" id="n0Slider" min="1" max="500" value="10" step="1">
+      </div>
+      <div class="slider-item">
+        <div class="label-row">
+          <span>Growth Rate (r)</span>
+          <span id="rValDisplay">1.20</span>
+        </div>
+        <input type="range" id="rSlider" min="0.1" max="1.5" value="1.2" step="0.01">
+      </div>
+      <div class="slider-item">
+        <div class="label-row">
+          <span>Carrying Capacity (K)</span>
+          <span id="kValDisplay">600</span>
+        </div>
+        <input type="range" id="kSlider" min="100" max="10000" value="600" step="50">
+      </div>
+    </div>
+
+    <div class="birth-death-row">
+      <div class="bd-box births">
+        <div class="bd-label">Births/tick</div>
+        <div class="bd-value" id="birthsDisplay">0</div>
+      </div>
+      <div class="bd-box deaths">
+        <div class="bd-label">Deaths/tick</div>
+        <div class="bd-value" id="deathsDisplay">0</div>
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button class="btn btn-setup" id="setupBtn">Setup</button>
+      <button class="btn btn-go" id="goBtn">Go</button>
+    </div>
+  </div>
+
+  <!-- Speed (bottom-right corner) -->
+  <div class="speed-panel">
+    <div class="speed-label">
+      <span>Simulation Speed</span>
+      <span id="speedValue">8</span>
+    </div>
+    <input type="range" id="speedSlider" min="1" max="20" value="8" step="1">
+  </div>
+
 </div>
 
 <script>
@@ -259,13 +420,22 @@
   // History for charts — recorded each tick from actual simulation
   const historyTimes = [];
   const historyPops = [];
-  const historyGrowth = [];      // dN/dt at each tick
-  const historyPerCapita = [];   // (dN/dt)/N at each tick
+  const historyGrowth = [];      // {N, rate}
+  const historyPerCapita = [];   // {N, rate}
 
   // ---------- world canvas ----------
   const canvas = document.getElementById('worldCanvas');
   const ctx = canvas.getContext('2d');
-  const worldWidth = 500, worldHeight = 300;
+  let worldWidth = 500, worldHeight = 300;
+
+  function resizeCanvas() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    worldWidth = Math.floor(rect.width);
+    worldHeight = Math.floor(rect.height);
+    canvas.width = worldWidth;
+    canvas.height = worldHeight;
+    drawWorld();
+  }
 
   // Each agent: {x, y, state}
   // state: 'normal' | 'born' | 'dying'
@@ -276,41 +446,46 @@
     ctx.fillStyle = '#fdf8e0';
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
+    // Dot size adapts slightly to canvas size
+    const baseRadius = Math.max(1.4, Math.min(2.2, worldWidth / 350));
+
     for (let a of agents) {
       if (a.state === 'dying') {
         ctx.strokeStyle = '#cc2222';
         ctx.lineWidth = 2.5;
+        const s = baseRadius + 2.2;
         ctx.beginPath();
-        ctx.moveTo(a.x - 4, a.y - 4);
-        ctx.lineTo(a.x + 4, a.y + 4);
-        ctx.moveTo(a.x + 4, a.y - 4);
-        ctx.lineTo(a.x - 4, a.y + 4);
+        ctx.moveTo(a.x - s, a.y - s);
+        ctx.lineTo(a.x + s, a.y + s);
+        ctx.moveTo(a.x + s, a.y - s);
+        ctx.lineTo(a.x - s, a.y + s);
         ctx.stroke();
       } else if (a.state === 'born') {
         ctx.fillStyle = '#22aa22';
         ctx.beginPath();
-        ctx.arc(a.x, a.y, 3.0, 0, 2 * Math.PI);
+        ctx.arc(a.x, a.y, baseRadius + 1.2, 0, 2 * Math.PI);
         ctx.fill();
       } else {
         ctx.fillStyle = '#111111';
         ctx.beginPath();
-        ctx.arc(a.x, a.y, 1.8, 0, 2 * Math.PI);
+        ctx.arc(a.x, a.y, baseRadius, 0, 2 * Math.PI);
         ctx.fill();
       }
     }
   }
 
   // ---------- convert population to number of dots (scaled) ----------
+  // Now K can be up to 10000, but we cap visible dots at ~1500 for performance.
   function popToDots(pop) {
-    const maxDots = 350;
-    return Math.min(maxDots, Math.max(0, Math.round(pop)));
+    const MAX_VISIBLE = 1500;
+    return Math.min(MAX_VISIBLE, Math.max(0, Math.round(pop)));
   }
 
-  // ---------- spawn one agent at a random position ----------
+  // ---------- spawn one agent ----------
   function spawnAgent(state) {
     return {
-      x: Math.random() * (worldWidth - 8) + 4,
-      y: Math.random() * (worldHeight - 8) + 4,
+      x: Math.random() * (worldWidth - 10) + 5,
+      y: Math.random() * (worldHeight - 10) + 5,
       state: state || 'normal'
     };
   }
@@ -318,27 +493,26 @@
   // ---------- remove all 'dying' agents from the previous tick ----------
   function clearOldDying() {
     agents = agents.filter(a => a.state !== 'dying');
-    // Promote 'born' to 'normal' — they survived their birth tick
+    // Promote 'born' to 'normal'
     for (let a of agents) {
       if (a.state === 'born') a.state = 'normal';
     }
   }
 
-  // ---------- apply births: add 'births' new agents ----------
+  // ---------- apply births ----------
   function applyBirths(births) {
     for (let i = 0; i < births; i++) {
       agents.push(spawnAgent('born'));
     }
   }
 
-  // ---------- apply deaths: mark 'deaths' random normal agents as dying ----------
+  // ---------- apply deaths ----------
   function applyDeaths(deaths) {
-    // Collect indices of agents in 'normal' state
     const normalIdx = [];
     for (let i = 0; i < agents.length; i++) {
       if (agents[i].state === 'normal') normalIdx.push(i);
     }
-    // Shuffle for random selection
+    // Shuffle
     for (let i = normalIdx.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [normalIdx[i], normalIdx[j]] = [normalIdx[j], normalIdx[i]];
@@ -347,8 +521,7 @@
     for (let i = 0; i < toMark; i++) {
       agents[normalIdx[i]].state = 'dying';
     }
-    // If we still need more (because all normal agents were exhausted),
-    // mark any remaining agents regardless of state
+    // If we still need more, mark any non-dying agent
     let remaining = deaths - toMark;
     if (remaining > 0) {
       for (let i = 0; i < agents.length && remaining > 0; i++) {
@@ -361,45 +534,37 @@
   }
 
   // ---------- ONE simulation tick ----------
-  // The logistic model gives us the *expected* growth rate,
-  // which we convert into discrete birth and death events.
+  // Logistic model at the individual level:
+  //   per-capita birth rate b = r
+  //   per-capita death rate d = r * N / K
+  // => births per tick = r * N * dt
+  //    deaths per tick = (r * N^2 / K) * dt
   function tick(dt) {
     const N = population;
     if (N <= 0) return { births: 0, deaths: 0 };
 
-    // Logistic model: dN/dt = r * N * (1 - N/K)
-    // At the individual level:
-    //   per-capita birth rate b = r
-    //   per-capita death rate d = r * N / K
-    // So:
-    //   births per tick  = b * N * dt = r * N * dt
-    //   deaths per tick  = d * N * dt = (r * N^2 / K) * dt
     const expectedBirths = r * N * dt;
     const expectedDeaths = (r * N * N / K) * dt;
 
-    // Convert to integers using stochastic rounding
-    // (preserves the expected value over many ticks)
+    // Stochastic rounding preserves expected value
     let births = Math.floor(expectedBirths);
     if (Math.random() < (expectedBirths - births)) births++;
 
     let deaths = Math.floor(expectedDeaths);
     if (Math.random() < (expectedDeaths - deaths)) deaths++;
 
-    // Can't die more than we have
     deaths = Math.min(deaths, N);
 
-    // Update population
     population = N + births - deaths;
     if (population < 0) population = 0;
 
-    // Record actual growth and per-capita growth for the charts
+    // Record actual growth for charts
     const actualGrowth = births - deaths;
     const actualPerCapita = N > 0 ? actualGrowth / N : 0;
 
-    // Update history (charts are driven by actual simulation)
     historyTimes.push(currentTime);
     historyPops.push(population);
-    historyGrowth.push({ N: N, rate: actualGrowth });   // store N at which this growth occurred
+    historyGrowth.push({ N: N, rate: actualGrowth });
     historyPerCapita.push({ N: N, rate: actualPerCapita });
 
     return { births, deaths };
@@ -409,7 +574,6 @@
   function stepSimulation() {
     if (!isRunning) return;
 
-    // Advance simulation time
     const dt = BASE_SPEED * speedFactor;
     currentTime += dt;
 
@@ -420,26 +584,18 @@
       document.getElementById('goBtn').textContent = 'Go';
     }
 
-    // Clear last tick's dying agents (they are now removed)
     clearOldDying();
-
-    // Run one tick of the simulation
     const { births, deaths } = tick(dt);
-
-    // Apply births and deaths to the visual agents
     applyBirths(births);
     applyDeaths(deaths);
 
-    // Draw
     drawWorld();
 
-    // Update displays
     document.getElementById('tickDisplay').textContent =
       `t = ${currentTime.toFixed(2)}  |  N = ${population}`;
     document.getElementById('birthsDisplay').textContent = births;
     document.getElementById('deathsDisplay').textContent = deaths;
 
-    // Update charts
     updateCharts();
 
     if (isRunning) {
@@ -458,15 +614,15 @@
     chartSize.data.datasets[0].data = historyPops;
     const maxPop = Math.max(K * 1.15, population, ...historyPops, 10);
     chartSize.options.scales.y.max = Math.ceil(maxPop / 100) * 100;
-    chartSize.update();
+    chartSize.update('none');
 
-    // Growth Rate vs N — each point is (N, growth rate at that N)
+    // Growth Rate vs N
     chartGrowth.data.labels = historyGrowth.map(h => h.N.toFixed(1));
     chartGrowth.data.datasets[0].data = historyGrowth.map(h => h.rate);
-    const maxGrowth = Math.max(...historyGrowth.map(h => Math.abs(h.rate)), 10);
-    chartGrowth.options.scales.y.max = Math.ceil(maxGrowth * 1.3);
-    chartGrowth.options.scales.y.min = -Math.ceil(maxGrowth * 0.3);
-    chartGrowth.update();
+    const maxG = Math.max(...historyGrowth.map(h => Math.abs(h.rate)), 10);
+    chartGrowth.options.scales.y.max = Math.ceil(maxG * 1.3);
+    chartGrowth.options.scales.y.min = -Math.ceil(maxG * 0.3);
+    chartGrowth.update('none');
 
     // Per Capita Growth Rate vs N
     chartPerCapita.data.labels = historyPerCapita.map(h => h.N.toFixed(1));
@@ -474,24 +630,27 @@
     const maxPC = Math.max(...historyPerCapita.map(h => Math.abs(h.rate)), 1);
     chartPerCapita.options.scales.y.max = Math.ceil(maxPC * 1.3 * 10) / 10;
     chartPerCapita.options.scales.y.min = -Math.ceil(maxPC * 0.3 * 10) / 10;
-    chartPerCapita.update();
+    chartPerCapita.update('none');
   }
 
   function initCharts() {
+    const smallFont = { size: 8 };
+    const titleFont = { size: 8 };
+
     const ctxSize = document.getElementById('popSizeChart').getContext('2d');
     chartSize = new Chart(ctxSize, {
       type: 'line',
       data: { labels: [], datasets: [{
         label: 'N(t)', data: [], borderColor: '#c0392b',
-        backgroundColor: 'transparent', borderWidth: 2.5,
+        backgroundColor: 'transparent', borderWidth: 2,
         pointRadius: 0, tension: 0.1, fill: false,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: {
-          x: { title: { display: true, text: 'Time (t)', font: { size: 8 } }, ticks: { font: { size: 7 } } },
-          y: { title: { display: true, text: 'Population Size (N)', font: { size: 8 } }, ticks: { font: { size: 7 } }, beginAtZero: true }
+          x: { title: { display: true, text: 'Time (t)', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } },
+          y: { title: { display: true, text: 'N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 }, beginAtZero: true }
         }
       }
     });
@@ -501,15 +660,15 @@
       type: 'line',
       data: { labels: [], datasets: [{
         label: 'dN/dt', data: [], borderColor: '#c0392b',
-        backgroundColor: 'transparent', borderWidth: 2.5,
+        backgroundColor: 'transparent', borderWidth: 2,
         pointRadius: 0, tension: 0.1, fill: false,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: {
-          x: { title: { display: true, text: 'Population Size (N)', font: { size: 8 } }, ticks: { font: { size: 7 } } },
-          y: { title: { display: true, text: 'dN/dt', font: { size: 8 } }, ticks: { font: { size: 7 } } }
+          x: { title: { display: true, text: 'N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } },
+          y: { title: { display: true, text: 'dN/dt', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } }
         }
       }
     });
@@ -519,15 +678,15 @@
       type: 'line',
       data: { labels: [], datasets: [{
         label: 'dN/dt / N', data: [], borderColor: '#1e6fa3',
-        backgroundColor: 'transparent', borderWidth: 2.5,
+        backgroundColor: 'transparent', borderWidth: 2,
         pointRadius: 0, tension: 0.1, fill: false,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: {
-          x: { title: { display: true, text: 'Population Size (N)', font: { size: 8 } }, ticks: { font: { size: 7 } } },
-          y: { title: { display: true, text: 'dN/dt / N', font: { size: 8 } }, ticks: { font: { size: 7 } } }
+          x: { title: { display: true, text: 'N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } },
+          y: { title: { display: true, text: 'dN/dt / N', font: titleFont }, ticks: { font: smallFont, maxTicksLimit: 5 } }
         }
       }
     });
@@ -546,7 +705,6 @@
     currentTime = 0;
     population = N0;
 
-    // Clear history
     historyTimes.length = 0;
     historyPops.length = 0;
     historyGrowth.length = 0;
@@ -623,7 +781,7 @@
         n0Slider.value = N0;
         document.getElementById('n0ValDisplay').textContent = N0;
       }
-      const maxN0 = Math.min(300, K - 1);
+      const maxN0 = Math.min(500, K - 1);
       n0Slider.max = maxN0;
       if (N0 > maxN0) {
         N0 = maxN0;
@@ -639,7 +797,7 @@
       document.getElementById('speedValue').textContent = speedFactor;
     });
 
-    const maxN0 = Math.min(300, K - 1);
+    const maxN0 = Math.min(500, K - 1);
     n0Slider.max = maxN0;
   }
 
@@ -658,8 +816,12 @@
     document.getElementById('speedSlider').value = speedFactor;
     document.getElementById('speedValue').textContent = speedFactor;
 
-    const maxN0 = Math.min(300, K - 1);
+    const maxN0 = Math.min(500, K - 1);
     document.getElementById('n0Slider').max = maxN0;
+
+    // Size the canvas to fill its parent
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     resetSimulation();
 
