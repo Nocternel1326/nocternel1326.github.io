@@ -36,6 +36,63 @@
     .world-container { flex: 1; width: 100%; height: 100%; position: relative; }
     .world-canvas { display: block; width: 100%; height: 100%; }
 
+    /* ---- Extinction overlay ---- */
+    .extinction-overlay {
+      position: absolute; inset: 0;
+      background: rgba(30, 20, 10, 0.78);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 50; opacity: 0; pointer-events: none;
+      transition: opacity 0.5s ease;
+      backdrop-filter: blur(3px);
+    }
+    .extinction-overlay.show { opacity: 1; pointer-events: auto; }
+    .extinction-card {
+      background: rgba(245, 238, 200, 0.98);
+      border: 3px solid #8a5a3a;
+      border-radius: 20px;
+      padding: 2.2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      max-width: 520px;
+      animation: extPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes extPop {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .extinction-card .ext-icon {
+      font-size: 4rem; line-height: 1;
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+    .extinction-card h2 {
+      font-size: 2rem; font-weight: 800; color: #8a1a1a;
+      margin: 0 0 0.5rem 0;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .extinction-card p {
+      font-size: 1rem; color: #4a3f28;
+      margin: 0.3rem 0;
+      font-weight: 500;
+    }
+    .extinction-card .ext-stats {
+      margin: 1rem 0 1.4rem 0;
+      padding: 0.8rem;
+      background: #fff8e0;
+      border-radius: 10px;
+      border: 1px dashed #c8b87a;
+      font-size: 0.9rem;
+      color: #3a3020;
+    }
+    .extinction-card .ext-stats span {
+      font-weight: 700;
+      font-family: 'SF Mono', monospace;
+    }
+    .extinction-card .ext-buttons {
+      display: flex; gap: 0.8rem; justify-content: center;
+    }
+
     /* ---- Shared panel style ---- */
     .panel {
       background: rgba(245, 238, 200, 0.96);
@@ -108,9 +165,11 @@
       cursor: pointer; transition: all 0.08s ease; border: 1px solid #a89a5a;
     }
     .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #5a4a2a, 0 4px 10px rgba(80, 60, 20, 0.4); }
-    .btn-setup { background: #a89a5a; }
+    .btn-refresh { background: #a89a5a; }
+    .btn-restart { background: #7a8a4a; }
     .btn-go { background: #5a8a4a; }
     .btn-go.running { background: #b04040; border-color: #d06060; }
+    .btn-danger { background: #b04040; border-color: #d06060; }
 
     /* ---- Speed panel ---- */
     .speed-panel {
@@ -184,10 +243,10 @@
       align-self: flex-end; margin-bottom: 0.3rem;
     }
 
-    /* ---- Left column stack: legend, stats, disasters ---- */
+    /* ---- Left column stack ---- */
     .left-stack {
       position: absolute; top: 3.6rem; left: 1rem;
-      width: 300px;
+      width: 320px;
       display: flex; flex-direction: column; gap: 0.6rem;
       z-index: 10;
       max-height: calc(100vh - 5rem);
@@ -196,57 +255,57 @@
       padding-right: 4px;
     }
     .left-stack::-webkit-scrollbar { width: 6px; }
-    .left-stack::-webkit-scrollbar-thumb {
-      background: #c8b87a; border-radius: 3px;
-    }
+    .left-stack::-webkit-scrollbar-thumb { background: #c8b87a; border-radius: 3px; }
     .left-stack::-webkit-scrollbar-track { background: transparent; }
 
-    /* Legend (now inside left-stack) */
+    /* Legend (single row, never wraps) */
     .legend-panel {
       background: rgba(255, 253, 240, 0.92);
-      border-radius: 12px; padding: 0.5rem 0.85rem;
+      border-radius: 12px; padding: 0.5rem 0.7rem;
       border: 2px solid #d4c48a;
       box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.4);
-      color: #3a3020; font-size: 0.75rem;
+      color: #3a3020; font-size: 0.72rem;
       backdrop-filter: blur(4px);
-      display: flex; gap: 0.7rem; align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
+      display: flex; gap: 0.55rem; align-items: center;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      overflow: hidden;
     }
     .legend-item {
-      display: flex; align-items: center; gap: 0.35rem; font-weight: 600;
+      display: flex; align-items: center; gap: 0.28rem;
+      font-weight: 600; white-space: nowrap;
     }
     .legend-swatch {
-      display: inline-block; width: 12px; height: 12px;
+      display: inline-block; width: 11px; height: 11px;
       border-radius: 50%; flex-shrink: 0;
     }
-    .legend-swatch.normal { background: #111111; width: 9px; height: 9px; margin: 0 1.5px; }
+    .legend-swatch.normal { background: #111111; width: 8px; height: 8px; margin: 0 1.5px; }
     .legend-swatch.born { background: #22aa22; }
     .legend-x {
-      position: relative; width: 12px; height: 12px; flex-shrink: 0;
+      position: relative; width: 11px; height: 11px; flex-shrink: 0;
     }
     .legend-x::before, .legend-x::after {
       content: ''; position: absolute;
-      left: 50%; top: 50%; width: 12px; height: 2px;
+      left: 50%; top: 50%; width: 11px; height: 2px;
       background: #cc2222; transform-origin: center;
     }
     .legend-x::before { transform: translate(-50%, -50%) rotate(45deg); }
     .legend-x::after  { transform: translate(-50%, -50%) rotate(-45deg); }
 
-    /* Biome badge – now next to legend inside left-stack */
     .biome-badge {
-      font-size: 0.75rem; font-weight: 700;
-      padding: 0.35rem 0.7rem; border-radius: 30px;
+      font-size: 0.68rem; font-weight: 700;
+      padding: 0.28rem 0.6rem; border-radius: 30px;
       background: rgba(255, 253, 240, 0.95);
       border: 2px solid #c8b87a;
       color: #3a3020;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
       text-transform: uppercase;
       box-shadow: 0 2px 6px rgba(120, 100, 40, 0.25);
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    /* Stats panel (now inside left-stack, no absolute positioning) */
+    /* Stats panel */
     .stats-panel {
       padding: 0.75rem 1rem 0.9rem 1rem;
       font-size: 0.82rem;
@@ -291,7 +350,7 @@
       background: #f0c8c8; color: #8a1a1a; border-color: #c88a8a;
     }
 
-    /* Disasters panel (now inside left-stack) */
+    /* Disasters panel */
     .disasters-panel {
       padding: 0.8rem 0.9rem 0.9rem 0.9rem;
     }
@@ -364,12 +423,12 @@
     @media (max-width: 1100px) {
       .charts-panel { width: 280px; }
       .charts-panel.expanded { width: 480px; }
-      .left-stack { width: 260px; }
+      .left-stack { width: 300px; }
     }
     @media (max-width: 850px) {
       .charts-panel { display: none; }
       .chart-toggle { display: none; }
-      .left-stack { width: 240px; }
+      .left-stack { width: 280px; }
     }
   </style>
 </head>
@@ -385,10 +444,29 @@
     </div>
   </div>
 
-  <!-- Left column stack: legend+biome, stats, disasters -->
+  <!-- Extinction overlay -->
+  <div class="extinction-overlay" id="extinctionOverlay">
+    <div class="extinction-card">
+      <span class="ext-icon">💀</span>
+      <h2>The Species is Extinct</h2>
+      <p>All individuals have perished.</p>
+      <div class="ext-stats">
+        Survived until <span id="extSurvivedTime">0.00</span> t<br>
+        Total births: <span id="extTotalBirths">0</span> &nbsp;·&nbsp;
+        Total deaths: <span id="extTotalDeaths">0</span><br>
+        Disaster deaths: <span id="extDisasterDeaths">0</span>
+      </div>
+      <div class="ext-buttons">
+        <button class="btn btn-restart" id="extRestartBtn">🔄 Restart (same terrain)</button>
+        <button class="btn btn-refresh" id="extRefreshBtn">🌍 Refresh (new terrain)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Left column stack -->
   <div class="left-stack">
 
-    <!-- Legend + Biome badge -->
+    <!-- Legend + Biome badge (kept on one row) -->
     <div class="legend-panel">
       <div class="legend-item"><span class="legend-swatch normal"></span> Alive</div>
       <div class="legend-item"><span class="legend-swatch born"></span> Born</div>
@@ -539,7 +617,8 @@
     </div>
 
     <div class="button-row">
-      <button class="btn btn-setup" id="setupBtn">Setup</button>
+      <button class="btn btn-refresh" id="refreshBtn" title="New terrain, same parameters">🌍 Refresh</button>
+      <button class="btn btn-restart" id="restartBtn" title="Reset with same terrain and parameters">🔄 Restart</button>
       <button class="btn btn-go" id="goBtn">Go</button>
     </div>
   </div>
@@ -580,6 +659,8 @@
   let currentGrowthRate = 0;
   let currentPerCapita = 0;
 
+  let isExtinct = false;
+
   const historyTimes = [];
   const historyPops = [];
   const historyGrowth = [];
@@ -590,7 +671,7 @@
     plain: {
       name: 'Plain', icon: '🌾',
       grassTop: '#e6f0c0', grassMid: '#d8e8a8', grassBot: '#c0d888',
-      lakeColor1: '#b8e0f0', lakeColor2: '#7ab8d8', lakeColor3: '#4a8aaa', lakeBank: '#5a8a9a',
+      lakeColor1: '#b8e0f0', lakeColor2: '#7ab8d8', lakeColor3: '#4a8aaa',
       numLakes: [2, 3], lakeRadius: [0.08, 0.16],
       treeCount: 40, treePines: 0.4, treeColorA: '#3a7a3a', treeColorB: '#2f6a2f',
       shrubCount: 30, shrubColorA: '#4a8a3a', shrubColorB: '#5a9a4a',
@@ -601,7 +682,7 @@
     beach: {
       name: 'Beach', icon: '🏖️',
       grassTop: '#f5eec8', grassMid: '#ecdca0', grassBot: '#e0c880',
-      lakeColor1: '#b0e8f0', lakeColor2: '#6ac0dc', lakeColor3: '#3a90b8', lakeBank: '#a8a080',
+      lakeColor1: '#b0e8f0', lakeColor2: '#6ac0dc', lakeColor3: '#3a90b8',
       numLakes: [3, 5], lakeRadius: [0.10, 0.20],
       treeCount: 12, treePines: 0.2, treeColorA: '#6a9a4a', treeColorB: '#5a8a3a',
       shrubCount: 15, shrubColorA: '#8aaa5a', shrubColorB: '#7a9a4a',
@@ -612,7 +693,7 @@
     desert: {
       name: 'Desert', icon: '🏜️',
       grassTop: '#f0e0b0', grassMid: '#e8d090', grassBot: '#dcb870',
-      lakeColor1: '#a8d8e8', lakeColor2: '#6aa8c0', lakeColor3: '#3a8098', lakeBank: '#c0a878',
+      lakeColor1: '#a8d8e8', lakeColor2: '#6aa8c0', lakeColor3: '#3a8098',
       numLakes: [0, 1], lakeRadius: [0.06, 0.10],
       treeCount: 6, treePines: 0.5, treeColorA: '#7a8a4a', treeColorB: '#6a7a3a',
       shrubCount: 10, shrubColorA: '#a0a05a', shrubColorB: '#90904a',
@@ -623,7 +704,7 @@
     rainforest: {
       name: 'Rainforest', icon: '🌴',
       grassTop: '#a8d888', grassMid: '#88c070', grassBot: '#68a858',
-      lakeColor1: '#a0d8e0', lakeColor2: '#5aa0b8', lakeColor3: '#2a7898', lakeBank: '#3a6a58',
+      lakeColor1: '#a0d8e0', lakeColor2: '#5aa0b8', lakeColor3: '#2a7898',
       numLakes: [2, 3], lakeRadius: [0.08, 0.14],
       treeCount: 75, treePines: 0.25, treeColorA: '#1e6a2e', treeColorB: '#165024',
       shrubCount: 55, shrubColorA: '#2a7a3a', shrubColorB: '#1e6a2e',
@@ -634,7 +715,7 @@
     tundra: {
       name: 'Tundra', icon: '❄️',
       grassTop: '#e0e8e0', grassMid: '#c8d4c8', grassBot: '#a8bca8',
-      lakeColor1: '#c8ecf0', lakeColor2: '#90c8d8', lakeColor3: '#5898b0', lakeBank: '#8098a0',
+      lakeColor1: '#c8ecf0', lakeColor2: '#90c8d8', lakeColor3: '#5898b0',
       numLakes: [2, 4], lakeRadius: [0.10, 0.18],
       treeCount: 10, treePines: 0.9, treeColorA: '#3a6a4a', treeColorB: '#2a5a3a',
       shrubCount: 18, shrubColorA: '#5a7a5a', shrubColorB: '#4a6a4a',
@@ -645,7 +726,7 @@
     savanna: {
       name: 'Savanna', icon: '🦒',
       grassTop: '#e8dca0', grassMid: '#d8c880', grassBot: '#c0a860',
-      lakeColor1: '#b0d8e0', lakeColor2: '#70a8c0', lakeColor3: '#4a8898', lakeBank: '#8a8060',
+      lakeColor1: '#b0d8e0', lakeColor2: '#70a8c0', lakeColor3: '#4a8898',
       numLakes: [1, 2], lakeRadius: [0.07, 0.13],
       treeCount: 20, treePines: 0.15, treeColorA: '#6a8a3a', treeColorB: '#5a7a2a',
       shrubCount: 40, shrubColorA: '#8a9a4a', shrubColorB: '#7a8a3a',
@@ -668,6 +749,9 @@
     waterCtx: null,
     features: { lakes: [], trees: [], shrubs: [], rocks: [], flowers: [] }
   };
+
+  // Save terrain layout so Restart can reproduce the exact same map
+  let savedTerrainSnapshot = null;
 
   function isWater(x, y) {
     if (!terrain.waterCtx) return false;
@@ -698,7 +782,7 @@
     mctx.fillRect(0, 0, worldWidth, worldHeight);
     mctx.fillStyle = '#ffffff';
 
-    // --- Lakes ---
+    // --- Lakes with randomized organic bank shapes ---
     const lakes = [];
     const [minL, maxL] = biomeData.numLakes;
     const numLakes = randInt(minL, maxL);
@@ -714,14 +798,28 @@
         Math.hypot(cx - L.cx, cy - L.cy) < (radiusBase + L.radius) * 1.35
       ));
 
-      const numPts = 12;
+      // Each lake gets its OWN random wave parameters for the organic bank shape.
+      // This means the "dark circles" (the outer bank) vary in shape every time.
+      const numPts = randInt(10, 16);
+      const wave1Amp = 0.25 + Math.random() * 0.25;   // was fixed at 0.4
+      const wave1Freq = randInt(2, 4);                 // was fixed at 3
+      const wave1Phase = Math.random() * Math.PI * 2;
+      const wave2Amp = 0.08 + Math.random() * 0.15;    // was fixed at 0.15
+      const wave2Freq = randInt(5, 9);                 // was fixed at 7
+      const wave2Phase = Math.random() * Math.PI * 2;
+      const yScale = 0.65 + Math.random() * 0.25;      // vertical ellipse factor
+
       const pts = [];
       for (let i = 0; i < numPts; i++) {
         const ang = (i / numPts) * Math.PI * 2;
-        const rVar = radiusBase * (0.7 + 0.4 * Math.sin(ang * 3 + Math.random() * 6) + 0.15 * Math.sin(ang * 7));
+        const rVar = radiusBase * (
+          0.7
+          + wave1Amp * Math.sin(ang * wave1Freq + wave1Phase)
+          + wave2Amp * Math.sin(ang * wave2Freq + wave2Phase)
+        );
         pts.push({
           x: cx + Math.cos(ang) * rVar,
-          y: cy + Math.sin(ang) * rVar * 0.78
+          y: cy + Math.sin(ang) * rVar * yScale
         });
       }
 
@@ -817,6 +915,74 @@
       });
     }
     terrain.features.flowers = flowers;
+
+    // Save snapshot for Restart
+    saveTerrainSnapshot();
+  }
+
+  // ---------- snapshot for Restart ----------
+  function saveTerrainSnapshot() {
+    // Deep-copy lakes (including pts arrays) and simple feature lists
+    savedTerrainSnapshot = {
+      biome: currentBiome,
+      lakes: terrain.features.lakes.map(L => ({
+        cx: L.cx, cy: L.cy, radius: L.radius,
+        pts: L.pts.map(p => ({ x: p.x, y: p.y }))
+      })),
+      trees: terrain.features.trees.map(t => ({ ...t })),
+      shrubs: terrain.features.shrubs.map(s => ({ ...s })),
+      rocks: terrain.features.rocks.map(r => ({ ...r })),
+      flowers: terrain.features.flowers.map(f => ({ ...f }))
+    };
+  }
+
+  function restoreTerrainSnapshot() {
+    if (!savedTerrainSnapshot) return false;
+    currentBiome = savedTerrainSnapshot.biome;
+    biomeData = BIOMES[currentBiome];
+    document.getElementById('biomeBadge').textContent =
+      `${biomeData.icon} ${biomeData.name}`;
+
+    // Rebuild lakes
+    terrain.features.lakes = savedTerrainSnapshot.lakes.map(L => ({
+      cx: L.cx, cy: L.cy, radius: L.radius,
+      pts: L.pts.map(p => ({ x: p.x, y: p.y }))
+    }));
+    terrain.features.trees = savedTerrainSnapshot.trees.map(t => ({ ...t }));
+    terrain.features.shrubs = savedTerrainSnapshot.shrubs.map(s => ({ ...s }));
+    terrain.features.rocks = savedTerrainSnapshot.rocks.map(r => ({ ...r }));
+    terrain.features.flowers = savedTerrainSnapshot.flowers.map(f => ({ ...f }));
+
+    // Rebuild the water mask from the restored lake shapes
+    const mask = document.createElement('canvas');
+    mask.width = worldWidth;
+    mask.height = worldHeight;
+    const mctx = mask.getContext('2d');
+    mctx.fillStyle = '#000000';
+    mctx.fillRect(0, 0, worldWidth, worldHeight);
+    mctx.fillStyle = '#ffffff';
+
+    for (let lake of terrain.features.lakes) {
+      const pts = lake.pts;
+      mctx.beginPath();
+      for (let i = 0; i < pts.length; i++) {
+        const p0 = pts[(i - 1 + pts.length) % pts.length];
+        const p1 = pts[i];
+        const p2 = pts[(i + 1) % pts.length];
+        const p3 = pts[(i + 2) % pts.length];
+        if (i === 0) mctx.moveTo(p1.x, p1.y);
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        mctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      }
+      mctx.closePath();
+      mctx.fill();
+    }
+    terrain.waterMask = mask;
+    terrain.waterCtx = mctx;
+    return true;
   }
 
   function resizeCanvas() {
@@ -857,6 +1023,7 @@
     // Lakes
     for (let lake of terrain.features.lakes) {
       const pts = lake.pts;
+      // Outer bank
       ctx.beginPath();
       for (let i = 0; i < pts.length; i++) {
         const p0 = pts[(i - 1 + pts.length) % pts.length];
@@ -871,9 +1038,10 @@
         ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
       }
       ctx.closePath();
-      ctx.fillStyle = biomeData.lakeBank;
+      ctx.fillStyle = '#5a8a9a';
       ctx.fill();
 
+      // Water gradient
       const lakeGrad = ctx.createRadialGradient(
         lake.cx - lake.radius * 0.2, lake.cy - lake.radius * 0.2, 5,
         lake.cx, lake.cy, lake.radius * 1.2
@@ -1047,6 +1215,7 @@
     }
   }
 
+  // ---------- tick ----------
   function tick(dt) {
     const N = population;
     if (N <= 0) return { births: 0, deaths: 0 };
@@ -1080,6 +1249,35 @@
     return { births, deaths };
   }
 
+  // ---------- extinction check ----------
+  function checkExtinction() {
+    if (isExtinct) return true;
+    if (population <= 0) {
+      isExtinct = true;
+      isRunning = false;
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+      }
+      document.getElementById('goBtn').classList.remove('running');
+      document.getElementById('goBtn').textContent = 'Go';
+
+      // Populate the extinction card
+      document.getElementById('extSurvivedTime').textContent = currentTime.toFixed(2);
+      document.getElementById('extTotalBirths').textContent = totalBirths;
+      document.getElementById('extTotalDeaths').textContent = totalDeaths;
+      document.getElementById('extDisasterDeaths').textContent = disasterDeaths;
+
+      // Show overlay
+      document.getElementById('extinctionOverlay').classList.add('show');
+      drawWorld();
+      updateStats();
+      updateCharts();
+      return true;
+    }
+    return false;
+  }
+
   // ---------- disasters ----------
   const DISASTERS = {
     volcano:   { name: 'Volcanic Eruption', icon: '🌋', kill: 0.70 },
@@ -1093,17 +1291,18 @@
   let disasterBannerTimeout = null;
 
   function triggerDisaster(key) {
+    if (isExtinct) return;
     const d = DISASTERS[key];
     if (!d) return;
 
     const before = population;
+    if (before <= 0) return;
     const killed = Math.max(1, Math.round(before * d.kill));
     population = Math.max(0, before - killed);
 
     totalDeaths += killed;
     disasterDeaths += killed;
 
-    // Mark visual agents
     const normalIdx = [];
     for (let i = 0; i < agents.length; i++) {
       if (agents[i].state === 'normal') normalIdx.push(i);
@@ -1135,11 +1334,13 @@
 
     document.getElementById('tickDisplay').textContent =
       `t = ${currentTime.toFixed(2)} | N = ${population}`;
+
+    checkExtinction();
   }
 
   // ---------- animation ----------
   function stepSimulation() {
-    if (!isRunning) return;
+    if (!isRunning || isExtinct) return;
     const dt = BASE_SPEED * speedFactor;
     currentTime += dt;
 
@@ -1157,6 +1358,8 @@
     document.getElementById('birthsDisplay').textContent = births;
     document.getElementById('deathsDisplay').textContent = deaths;
 
+    if (checkExtinction()) return;
+
     if (isRunning) animationFrame = requestAnimationFrame(stepSimulation);
     else drawWorld();
   }
@@ -1164,7 +1367,8 @@
   // ---------- statistics ----------
   function updateStats() {
     document.getElementById('statK').textContent = K;
-    document.getElementById('statRatio').textContent = (population / K * 100).toFixed(1) + '%';
+    document.getElementById('statRatio').textContent =
+      ((population / K) * 100).toFixed(1) + '%';
     document.getElementById('statHalfTime').textContent =
       timeToHalfK !== null ? timeToHalfK.toFixed(2) : '—';
     document.getElementById('statNinetyTime').textContent =
@@ -1274,12 +1478,15 @@
     });
   }
 
-  // ---------- reset ----------
-  function resetSimulation() {
+  // ---------- reset helpers ----------
+  // Common reset state (without regenerating terrain)
+  function resetState() {
     isRunning = false;
+    isExtinct = false;
     if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
     document.getElementById('goBtn').classList.remove('running');
     document.getElementById('goBtn').textContent = 'Go';
+    document.getElementById('extinctionOverlay').classList.remove('show');
 
     currentTime = 0;
     population = N0;
@@ -1296,9 +1503,6 @@
     historyGrowth.length = 0;
     historyPerCapita.length = 0;
 
-    currentBiome = pickBiome();
-    generateTerrain();
-
     agents = [];
     const dots = popToDots(N0);
     for (let i = 0; i < dots; i++) agents.push(spawnAgentOnLand('normal'));
@@ -1314,13 +1518,30 @@
     drawWorld();
     updateStats();
     updateCharts();
-
     document.getElementById('tickDisplay').textContent = `t = 0.00 | N = ${population}`;
     document.getElementById('birthsDisplay').textContent = '0';
     document.getElementById('deathsDisplay').textContent = '0';
   }
 
+  // Refresh: pick a NEW biome, generate NEW terrain, then reset
+  function refreshSimulation() {
+    currentBiome = pickBiome();
+    generateTerrain();
+    resetState();
+  }
+
+  // Restart: keep the SAME biome and SAME terrain, only reset state
+  function restartSimulation() {
+    if (savedTerrainSnapshot) {
+      // If canvas resized, regenerate the snapshot at the current size
+      restoreTerrainSnapshot();
+    }
+    resetState();
+  }
+
+  // ---------- go / pause ----------
   function toggleGo() {
+    if (isExtinct) return;
     const goBtn = document.getElementById('goBtn');
     if (isRunning) {
       isRunning = false;
@@ -1345,13 +1566,13 @@
       N0 = parseFloat(e.target.value);
       if (N0 > K) { N0 = Math.min(N0, K - 1); n0Slider.value = N0; }
       document.getElementById('n0ValDisplay').textContent = N0;
-      resetSimulation();
+      restartSimulation();  // keep terrain, just reset
     });
 
     rSlider.addEventListener('input', (e) => {
       r = parseFloat(e.target.value);
       document.getElementById('rValDisplay').textContent = r.toFixed(2);
-      resetSimulation();
+      restartSimulation();
     });
 
     kSlider.addEventListener('input', (e) => {
@@ -1369,7 +1590,7 @@
         document.getElementById('n0ValDisplay').textContent = N0;
       }
       document.getElementById('kValDisplay').textContent = K;
-      resetSimulation();
+      restartSimulation();
     });
 
     speedSlider.addEventListener('input', (e) => {
@@ -1418,12 +1639,24 @@
     document.getElementById('n0Slider').max = Math.min(500, K - 1);
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', () => {
+      // On resize, we need to regenerate terrain to fit new dimensions
+      // and update the snapshot so Restart still works
+      resizeCanvas();
+    });
 
-    resetSimulation();
+    // Initial state
+    currentBiome = pickBiome();
+    generateTerrain();
+    resetState();
 
-    document.getElementById('setupBtn').addEventListener('click', resetSimulation);
+    document.getElementById('refreshBtn').addEventListener('click', refreshSimulation);
+    document.getElementById('restartBtn').addEventListener('click', restartSimulation);
     document.getElementById('goBtn').addEventListener('click', toggleGo);
+
+    // Buttons inside extinction overlay
+    document.getElementById('extRestartBtn').addEventListener('click', restartSimulation);
+    document.getElementById('extRefreshBtn').addEventListener('click', refreshSimulation);
   });
 
 })();
