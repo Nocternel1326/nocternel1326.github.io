@@ -566,7 +566,7 @@
       <div class="ext-section">
         <div class="ext-section-title">Timeline</div>
         <div class="ext-row"><span>Survived until</span><span id="extSurvivedTime">0.00 t</span></div>
-        <div class="ext-row"><span>Time to reach K/2</span><span id="extHalfTime">—</span></div>
+        <div class="ext-row"><span>Time to reach 50% K</span><span id="extHalfTime">—</span></div>
         <div class="ext-row"><span>Time to reach 90% K</span><span id="extNinetyTime">—</span></div>
         <div class="ext-row"><span>Peak population</span><span id="extPeakPop">0</span></div>
       </div>
@@ -605,7 +605,7 @@
     </div>
 
     <div class="stats-panel panel">
-      <h3>📊 Statistics <span class="tick-mini" id="tickDisplay">t = 0.00 | N = 10</span></h3>
+      <h3>Statistics <span class="tick-mini" id="tickDisplay">t = 0.00 | N = 10</span></h3>
       <div class="stat-row">
         <span class="stat-label">Population / K</span>
         <span class="stat-value big" id="statRatio">1.7%</span>
@@ -621,10 +621,6 @@
       <div class="stat-row">
         <span class="stat-label">Time to reach 90% K</span>
         <span class="stat-value" id="statNinetyTime">—</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Max growth rate (rK/4)</span>
-        <span class="stat-value" id="statMaxGrowth">180.0</span>
       </div>
       <div class="stat-row">
         <span class="stat-label">Current growth rate</span>
@@ -649,7 +645,7 @@
     </div>
 
     <div class="disasters-panel panel">
-      <h2>⚠️ Abiotic Factors</h2>
+      <h2>Abiotic Factors</h2>
       <div class="disaster-grid">
         <button class="disaster-btn" data-disaster="volcano" title="Volcanic eruption kills ~70% of population">
           <span class="d-icon">🌋</span>
@@ -1652,7 +1648,6 @@
       timeToHalfK !== null ? timeToHalfK.toFixed(2) : '—';
     document.getElementById('statNinetyTime').textContent =
       timeToNinetyK !== null ? timeToNinetyK.toFixed(2) : '—';
-    document.getElementById('statMaxGrowth').textContent = ((r * K) / 4).toFixed(1);
     document.getElementById('statCurrentGrowth').textContent = currentGrowthRate.toFixed(1);
     document.getElementById('statPerCapita').textContent = currentPerCapita.toFixed(3);
     document.getElementById('statTotalBirths').textContent = totalBirths;
