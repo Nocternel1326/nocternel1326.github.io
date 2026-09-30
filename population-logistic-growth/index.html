@@ -3,100 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logistic Growth · Real Population Simulation</title>
+  <title>Logistic Growth · Population in a Living Landscape</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif; }
 
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      background: #fdf8e0;
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      overflow: hidden; background: #fdf8e0;
     }
 
-    .app {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      background: #fdf8e0;
-    }
+    .app { position: relative; width: 100vw; height: 100vh; background: #fdf8e0; }
 
-    /* ---- Main sandbox ---- */
     .sandbox {
-      position: absolute;
-      inset: 0;
-      background: #fdf8e0;
-      display: flex;
-      flex-direction: column;
+      position: absolute; inset: 0; background: #fdf8e0;
+      display: flex; flex-direction: column;
     }
 
     .sandbox-header {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      position: absolute; top: 0; left: 0; right: 0;
       padding: 0.75rem 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      z-index: 5;
-      pointer-events: none;
+      display: flex; align-items: center; justify-content: space-between;
+      z-index: 5; pointer-events: none;
     }
-
     .sandbox-header h1 {
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: #3a3020;
-      margin: 0;
+      font-size: 1.35rem; font-weight: 600; color: #3a3020; margin: 0;
       letter-spacing: 0.2px;
       text-shadow: 0 1px 2px rgba(255, 248, 224, 0.8);
       pointer-events: auto;
     }
 
-    .world-container {
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
+    .world-container { flex: 1; width: 100%; height: 100%; position: relative; }
+    .world-canvas { display: block; width: 100%; height: 100%; background: #fdf8e0; }
 
-    .world-canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      background: #fdf8e0;
-    }
-
-    /* ---- Bottom-left: parameter controls ---- */
+    /* ---- Controls panel ---- */
     .controls-panel {
-      position: absolute;
-      bottom: 1rem;
-      left: 1rem;
-      width: 320px;
+      position: absolute; bottom: 1rem; left: 1rem; width: 330px;
       background: rgba(245, 238, 200, 0.96);
-      border-radius: 14px;
-      padding: 0.9rem 1.1rem 1rem 1.1rem;
+      border-radius: 14px; padding: 0.9rem 1.1rem 1rem 1.1rem;
       box-shadow: 0 10px 25px -5px rgba(120, 100, 40, 0.5);
-      border: 2px solid #d4c48a;
-      z-index: 10;
-      color: #3a3020;
+      border: 2px solid #d4c48a; z-index: 10; color: #3a3020;
       backdrop-filter: blur(4px);
     }
-
     .controls-panel h2 {
-      font-size: 0.9rem;
-      font-weight: 700;
-      margin: 0 0 0.6rem 0;
-      color: #3a3020;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
+      font-size: 0.9rem; font-weight: 700; margin: 0 0 0.6rem 0;
+      color: #3a3020; letter-spacing: 0.4px; text-transform: uppercase;
     }
 
     .param-group { display: flex; flex-direction: column; gap: 0.55rem; }
-
     .slider-item { display: flex; flex-direction: column; gap: 0.15rem; }
     .slider-item .label-row {
       display: flex; justify-content: space-between;
@@ -110,8 +64,7 @@
     .slider-item input[type=range] {
       width: 100%; height: 6px; -webkit-appearance: none;
       background: #d4c48a; border-radius: 10px;
-      margin: 2px 0; border: 1px solid #b8a86a;
-      cursor: pointer;
+      margin: 2px 0; border: 1px solid #b8a86a; cursor: pointer;
     }
     .slider-item input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none; width: 16px; height: 16px;
@@ -120,12 +73,12 @@
     }
 
     .birth-death-row {
-      display: flex; gap: 0.5rem; margin-top: 0.7rem; justify-content: stretch;
+      display: flex; gap: 0.5rem; margin-top: 0.7rem;
     }
     .bd-box {
-      flex: 1;
-      background: #fff8e0; border-radius: 8px; padding: 0.3rem 0.4rem;
-      text-align: center; border: 2px solid #c8b87a;
+      flex: 1; background: #fff8e0; border-radius: 8px;
+      padding: 0.3rem 0.4rem; text-align: center;
+      border: 2px solid #c8b87a;
       box-shadow: inset 0 1px 4px #ffffff, 0 2px 3px rgba(120, 100, 40, 0.2);
     }
     .bd-box .bd-label {
@@ -146,49 +99,32 @@
       padding: 0.45rem 1.1rem; border-radius: 18px;
       letter-spacing: 0.4px;
       box-shadow: 0 3px 0 #5a4a2a, 0 4px 10px rgba(80, 60, 20, 0.4);
-      cursor: pointer; transition: all 0.08s ease;
-      border: 1px solid #a89a5a;
+      cursor: pointer; transition: all 0.08s ease; border: 1px solid #a89a5a;
     }
-    .btn:active {
-      transform: translateY(2px);
-      box-shadow: 0 1px 0 #5a4a2a, 0 4px 10px rgba(80, 60, 20, 0.4);
-    }
+    .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #5a4a2a, 0 4px 10px rgba(80, 60, 20, 0.4); }
     .btn-setup { background: #a89a5a; }
     .btn-go { background: #5a8a4a; }
     .btn-go.running { background: #b04040; border-color: #d06060; }
 
-    /* ---- Bottom-right: speed slider ---- */
+    /* ---- Speed panel ---- */
     .speed-panel {
-      position: absolute;
-      bottom: 1rem;
-      right: 1rem;
-      width: 240px;
+      position: absolute; bottom: 1rem; right: 1rem; width: 240px;
       background: rgba(245, 238, 200, 0.96);
-      border-radius: 14px;
-      padding: 0.7rem 1rem 0.9rem 1rem;
+      border-radius: 14px; padding: 0.7rem 1rem 0.9rem 1rem;
       box-shadow: 0 10px 25px -5px rgba(120, 100, 40, 0.5);
-      border: 2px solid #d4c48a;
-      z-index: 10;
-      color: #3a3020;
+      border: 2px solid #d4c48a; z-index: 10; color: #3a3020;
       backdrop-filter: blur(4px);
     }
     .speed-panel .speed-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #4a3f28;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; font-weight: 700; color: #4a3f28;
+      text-transform: uppercase; letter-spacing: 0.4px;
       margin-bottom: 0.25rem;
     }
     .speed-panel .speed-label span:last-child {
-      font-family: 'SF Mono', monospace;
-      background: #fff8e0;
-      padding: 0.05rem 0.5rem;
-      border-radius: 30px;
-      border: 1px solid #c8b87a;
-      text-transform: none;
+      font-family: 'SF Mono', monospace; background: #fff8e0;
+      padding: 0.05rem 0.5rem; border-radius: 30px;
+      border: 1px solid #c8b87a; text-transform: none;
     }
     .speed-panel input[type=range] {
       width: 100%; height: 7px; -webkit-appearance: none;
@@ -201,30 +137,19 @@
       box-shadow: 0 1px 4px rgba(80, 60, 20, 0.5); cursor: pointer;
     }
 
-    /* ---- Top-right: charts ---- */
+    /* ---- Charts panel ---- */
     .charts-panel {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      width: 340px;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      z-index: 10;
-      transition: width 0.2s ease;
+      position: absolute; top: 1rem; right: 1rem; width: 340px;
+      display: flex; flex-direction: column; gap: 0.6rem;
+      z-index: 10; transition: width 0.2s ease;
     }
-
-    .charts-panel.expanded {
-      width: 620px;
-    }
+    .charts-panel.expanded { width: 620px; }
 
     .chart-card {
       background: rgba(255, 253, 240, 0.96);
-      border-radius: 12px;
-      padding: 0.55rem 0.7rem 0.3rem 0.7rem;
+      border-radius: 12px; padding: 0.55rem 0.7rem 0.3rem 0.7rem;
       box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.45);
-      border: 2px solid #d4c48a;
-      backdrop-filter: blur(4px);
+      border: 2px solid #d4c48a; backdrop-filter: blur(4px);
     }
     .chart-card .chart-title {
       display: flex; justify-content: space-between;
@@ -233,176 +158,103 @@
     }
     .chart-card .chart-title span:last-child { color: #8a7a4a; font-weight: 400; }
     .chart-card canvas {
-      width: 100% !important;
-      height: 110px !important;
+      width: 100% !important; height: 110px !important;
       max-height: 110px;
       transition: height 0.2s ease, max-height 0.2s ease;
     }
-
     .charts-panel.expanded .chart-card canvas {
-      height: 180px !important;
-      max-height: 180px;
+      height: 180px !important; max-height: 180px;
     }
 
     .chart-toggle {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      z-index: 12;
+      position: absolute; top: 1rem; right: 1rem; z-index: 12;
       background: rgba(245, 238, 200, 0.96);
-      border: 2px solid #d4c48a;
-      border-radius: 10px;
-      width: 34px;
-      height: 34px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      font-weight: 700;
-      color: #5a4a2a;
+      border: 2px solid #d4c48a; border-radius: 10px;
+      width: 34px; height: 34px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700; color: #5a4a2a;
       box-shadow: 0 4px 10px rgba(120, 100, 40, 0.3);
-      transition: all 0.15s ease;
-      padding: 0;
+      transition: all 0.15s ease; padding: 0;
     }
-    .chart-toggle:hover {
-      background: #fff8e0;
-      transform: scale(1.05);
-    }
-
+    .chart-toggle:hover { background: #fff8e0; transform: scale(1.05); }
     .charts-panel.visible .chart-toggle {
-      position: relative;
-      top: auto;
-      right: auto;
-      align-self: flex-end;
-      margin-bottom: 0.3rem;
+      position: relative; top: auto; right: auto;
+      align-self: flex-end; margin-bottom: 0.3rem;
     }
 
-    /* ---- Statistics panel (top-left, unified) ---- */
+    /* ---- Stats panel ---- */
     .stats-panel {
-      position: absolute;
-      top: 3.4rem;
-      left: 1rem;
-      width: 300px;
+      position: absolute; top: 3.4rem; left: 1rem; width: 300px;
       background: rgba(255, 253, 240, 0.96);
-      border-radius: 12px;
-      padding: 0.75rem 1rem 0.9rem 1rem;
+      border-radius: 12px; padding: 0.75rem 1rem 0.9rem 1rem;
       border: 2px solid #d4c48a;
       box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.45);
-      z-index: 10;
-      color: #3a3020;
-      backdrop-filter: blur(4px);
+      z-index: 10; color: #3a3020; backdrop-filter: blur(4px);
       font-size: 0.82rem;
     }
-
     .stats-panel h3 {
-      font-size: 0.78rem;
-      font-weight: 700;
-      margin: 0 0 0.5rem 0;
-      color: #3a3020;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      border-bottom: 1px dashed #c8b87a;
-      padding-bottom: 0.3rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      font-size: 0.78rem; font-weight: 700; margin: 0 0 0.5rem 0;
+      color: #3a3020; letter-spacing: 0.4px; text-transform: uppercase;
+      border-bottom: 1px dashed #c8b87a; padding-bottom: 0.3rem;
+      display: flex; justify-content: space-between; align-items: center;
     }
-
     .stats-panel h3 .tick-mini {
-      font-family: 'SF Mono', monospace;
-      font-size: 0.72rem;
-      background: #fff8e0;
-      padding: 0.1rem 0.55rem;
-      border-radius: 30px;
-      border: 1px solid #c8b87a;
-      color: #3a3020;
-      font-weight: 700;
-      text-transform: none;
-      letter-spacing: 0;
+      font-family: 'SF Mono', monospace; font-size: 0.72rem;
+      background: #fff8e0; padding: 0.1rem 0.55rem;
+      border-radius: 30px; border: 1px solid #c8b87a;
+      color: #3a3020; font-weight: 700;
+      text-transform: none; letter-spacing: 0;
     }
 
     .stat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.22rem 0;
-      border-bottom: 1px dotted #e0d5a8;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.22rem 0; border-bottom: 1px dotted #e0d5a8;
     }
     .stat-row:last-child { border-bottom: none; }
     .stat-row .stat-label {
-      font-weight: 600;
-      color: #5a4a2a;
-      font-size: 0.75rem;
+      font-weight: 600; color: #5a4a2a; font-size: 0.75rem;
     }
     .stat-row .stat-value {
-      font-family: 'SF Mono', monospace;
-      font-weight: 700;
-      color: #1a3a1a;
-      background: #fff8e0;
-      padding: 0.05rem 0.5rem;
-      border-radius: 30px;
-      border: 1px solid #c8b87a;
-      font-size: 0.78rem;
-      min-width: 60px;
-      text-align: right;
+      font-family: 'SF Mono', monospace; font-weight: 700;
+      color: #1a3a1a; background: #fff8e0;
+      padding: 0.05rem 0.5rem; border-radius: 30px;
+      border: 1px solid #c8b87a; font-size: 0.78rem;
+      min-width: 60px; text-align: right;
     }
     .stat-row .stat-value.highlight {
-      background: #d8f0c0;
-      color: #0a5a0a;
-      border-color: #8ab86a;
+      background: #d8f0c0; color: #0a5a0a; border-color: #8ab86a;
     }
     .stat-row .stat-value.big {
-      background: #c8e0f0;
-      color: #0a3a5a;
-      border-color: #6aa0c8;
+      background: #c8e0f0; color: #0a3a5a; border-color: #6aa0c8;
     }
 
-    /* Legend */
+    /* ---- Legend ---- */
     .legend-panel {
-      position: absolute;
-      top: 1rem;
-      left: 1rem;
+      position: absolute; top: 1rem; left: 1rem;
       background: rgba(255, 253, 240, 0.92);
-      border-radius: 12px;
-      padding: 0.5rem 0.85rem;
+      border-radius: 12px; padding: 0.5rem 0.85rem;
       border: 2px solid #d4c48a;
       box-shadow: 0 8px 20px -5px rgba(120, 100, 40, 0.4);
-      z-index: 10;
-      color: #3a3020;
-      font-size: 0.75rem;
+      z-index: 10; color: #3a3020; font-size: 0.75rem;
       backdrop-filter: blur(4px);
-      display: flex;
-      gap: 0.9rem;
-      align-items: center;
+      display: flex; gap: 0.9rem; align-items: center;
     }
     .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-weight: 600;
+      display: flex; align-items: center; gap: 0.35rem; font-weight: 600;
     }
     .legend-swatch {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
+      display: inline-block; width: 12px; height: 12px;
+      border-radius: 50%; flex-shrink: 0;
     }
     .legend-swatch.normal { background: #111111; width: 9px; height: 9px; margin: 0 1.5px; }
     .legend-swatch.born { background: #22aa22; }
     .legend-x {
-      position: relative;
-      width: 12px; height: 12px;
-      flex-shrink: 0;
+      position: relative; width: 12px; height: 12px; flex-shrink: 0;
     }
     .legend-x::before, .legend-x::after {
-      content: '';
-      position: absolute;
-      left: 50%; top: 50%;
-      width: 12px; height: 2px;
-      background: #cc2222;
-      transform-origin: center;
+      content: ''; position: absolute;
+      left: 50%; top: 50%; width: 12px; height: 2px;
+      background: #cc2222; transform-origin: center;
     }
     .legend-x::before { transform: translate(-50%, -50%) rotate(45deg); }
     .legend-x::after  { transform: translate(-50%, -50%) rotate(-45deg); }
@@ -421,7 +273,6 @@
 <body>
 <div class="app">
 
-  <!-- Main sandbox -->
   <div class="sandbox">
     <div class="sandbox-header">
       <h1>🌿 Logistic Growth · Population in a Living Landscape</h1>
@@ -431,14 +282,12 @@
     </div>
   </div>
 
-  <!-- Legend -->
   <div class="legend-panel">
     <div class="legend-item"><span class="legend-swatch normal"></span> Alive</div>
     <div class="legend-item"><span class="legend-swatch born"></span> Born</div>
     <div class="legend-item"><span class="legend-x"></span> Died</div>
   </div>
 
-  <!-- Statistics panel (unified with tick info) -->
   <div class="stats-panel">
     <h3>📊 Statistics <span class="tick-mini" id="tickDisplay">t = 0.00 | N = 10</span></h3>
     <div class="stat-row">
@@ -479,7 +328,6 @@
     </div>
   </div>
 
-  <!-- Charts -->
   <div class="charts-panel visible" id="chartsPanel">
     <button class="chart-toggle" id="chartToggle" title="Toggle chart size">⤢</button>
     <div class="chart-card">
@@ -496,7 +344,6 @@
     </div>
   </div>
 
-  <!-- Controls -->
   <div class="controls-panel">
     <h2>Population Parameters</h2>
     <div class="param-group">
@@ -540,7 +387,6 @@
     </div>
   </div>
 
-  <!-- Speed -->
   <div class="speed-panel">
     <div class="speed-label">
       <span>Simulation Speed</span>
@@ -585,80 +431,212 @@
   const ctx = canvas.getContext('2d');
   let worldWidth = 500, worldHeight = 300;
 
-  // Terrain features (generated once per canvas resize)
-  let terrainFeatures = {
-    lake: null,
-    river: null,
-    mountains: [],
-    trees: []
+  // ---------- terrain data ----------
+  let terrain = {
+    waterMask: null,       // offscreen canvas: white = water, black = land
+    waterCtx: null,
+    features: {
+      lake: null,
+      river: [],
+      mountains: [],
+      trees: [],
+      rocks: [],
+      flowers: []
+    }
   };
 
+  // ---------- habitat: is a point water? ----------
+  // Uses the offscreen water mask.
+  function isWater(x, y) {
+    if (!terrain.waterCtx) return false;
+    if (x < 0 || y < 0 || x >= worldWidth || y >= worldHeight) return false;
+    const data = terrain.waterCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+    return data[0] > 128; // red channel high = water
+  }
+
+  // ---------- generate natural terrain ----------
   function generateTerrain() {
-    // Lake: a big rounded blob in the lower-right region
-    const lakeCX = worldWidth * 0.78;
-    const lakeCY = worldHeight * 0.75;
-    const lakeRX = Math.min(worldWidth, worldHeight) * 0.18;
-    const lakeRY = lakeRX * 0.72;
-    terrainFeatures.lake = { cx: lakeCX, cy: lakeCY, rx: lakeRX, ry: lakeRY };
+    // --- Create offscreen water mask ---
+    const mask = document.createElement('canvas');
+    mask.width = worldWidth;
+    mask.height = worldHeight;
+    const mctx = mask.getContext('2d');
 
-    // River: a winding path from top-left-ish to the lake
+    // Start all land (black)
+    mctx.fillStyle = '#000000';
+    mctx.fillRect(0, 0, worldWidth, worldHeight);
+
+    // --- Natural lake: organic blob shape ---
+    // Build a closed smooth path from polar points
+    const lakeCX = worldWidth * 0.76;
+    const lakeCY = worldHeight * 0.72;
+    const lakeRadius = Math.min(worldWidth, worldHeight) * 0.20;
+
+    const lakePoints = [];
+    const numLakePts = 14;
+    for (let i = 0; i < numLakePts; i++) {
+      const ang = (i / numLakePts) * Math.PI * 2;
+      // Radius varies smoothly for organic shape
+      const rVar = lakeRadius * (0.75 + 0.35 * Math.sin(ang * 3 + 1.2) + 0.15 * Math.sin(ang * 7 + 0.5));
+      lakePoints.push({
+        x: lakeCX + Math.cos(ang) * rVar,
+        y: lakeCY + Math.sin(ang) * rVar * 0.75   // slightly elliptical
+      });
+    }
+
+    // Draw lake as smooth closed curve on mask
+    mctx.fillStyle = '#ffffff';
+    mctx.beginPath();
+    // Use cardinal spline for smoothness
+    for (let i = 0; i < lakePoints.length; i++) {
+      const p0 = lakePoints[(i - 1 + lakePoints.length) % lakePoints.length];
+      const p1 = lakePoints[i];
+      const p2 = lakePoints[(i + 1) % lakePoints.length];
+      const p3 = lakePoints[(i + 2) % lakePoints.length];
+      if (i === 0) mctx.moveTo(p1.x, p1.y);
+      // Catmull-Rom to Bezier
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      mctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+    mctx.closePath();
+    mctx.fill();
+
+    // --- Natural river: winding taper from top-left to lake ---
     const riverPoints = [];
-    const startX = worldWidth * 0.05;
-    const startY = worldHeight * 0.1;
-    const endX = lakeCX - lakeRX * 0.4;
-    const endY = lakeCY - lakeRY * 0.4;
-    const steps = 16;
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      // Base line
-      let x = startX + (endX - startX) * t;
-      let y = startY + (endY - startY) * t;
-      // Wavy sine offsets
-      const wave = Math.sin(t * Math.PI * 3) * 40 * (1 - t * 0.5);
-      x += wave * 0.7;
-      y += Math.cos(t * Math.PI * 2.5) * 25 * (1 - t * 0.3);
-      riverPoints.push({ x, y });
-    }
-    terrainFeatures.river = riverPoints;
+    const rSteps = 22;
+    const rStartX = worldWidth * 0.04;
+    const rStartY = worldHeight * 0.12;
+    const rEndX = lakeCX - lakeRadius * 0.4;
+    const rEndY = lakeCY - lakeRadius * 0.3;
 
-    // Mountains: several triangular peaks along the top edge
-    terrainFeatures.mountains = [];
-    const numMountains = 5;
-    for (let i = 0; i < numMountains; i++) {
-      const baseX = worldWidth * (0.1 + 0.7 * (i / (numMountains - 1)));
-      const baseW = 70 + Math.random() * 50;
-      const height = 45 + Math.random() * 40;
-      terrainFeatures.mountains.push({
-        x: baseX,
-        w: baseW,
-        h: height,
-        snow: Math.random() > 0.5
-      });
+    for (let i = 0; i <= rSteps; i++) {
+      const t = i / rSteps;
+      // Base path
+      let x = rStartX + (rEndX - rStartX) * t;
+      let y = rStartY + (rEndY - rStartY) * t;
+      // Organic wiggles
+      const wig1 = Math.sin(t * Math.PI * 2.3 + 0.7) * 55 * (1 - t * 0.5);
+      const wig2 = Math.sin(t * Math.PI * 5.1 + 2.1) * 20 * (1 - t * 0.6);
+      const wig3 = Math.cos(t * Math.PI * 1.4) * 30 * (1 - t * 0.4);
+      x += wig1 * 0.6 + wig2 * 0.5;
+      y += wig3 * 0.5 + wig2 * 0.3;
+      // Width tapers from source to mouth
+      const width = 6 + t * 14;
+      riverPoints.push({ x, y, w: width });
     }
 
-    // Trees: scattered in the left/upper region (avoid lake & river)
-    terrainFeatures.trees = [];
-    const numTrees = 30;
-    for (let i = 0; i < numTrees; i++) {
-      const x = Math.random() * worldWidth;
-      const y = Math.random() * worldHeight * 0.85;
-      // Avoid lake
-      const dl = Math.hypot((x - lakeCX) / lakeRX, (y - lakeCY) / lakeRY);
-      if (dl < 1.2) continue;
-      // Avoid river (rough check)
-      let nearRiver = false;
-      for (let p of riverPoints) {
-        if (Math.hypot(x - p.x, y - p.y) < 30) { nearRiver = true; break; }
+    // Draw river on mask as thick stroked path
+    mctx.strokeStyle = '#ffffff';
+    mctx.lineCap = 'round';
+    mctx.lineJoin = 'round';
+    mctx.beginPath();
+    mctx.moveTo(riverPoints[0].x, riverPoints[0].y);
+    for (let i = 1; i < riverPoints.length; i++) {
+      const prev = riverPoints[i - 1];
+      const curr = riverPoints[i];
+      const mx = (prev.x + curr.x) / 2;
+      const my = (prev.y + curr.y) / 2;
+      mctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+    }
+    mctx.quadraticCurveTo(
+      riverPoints[riverPoints.length - 2].x,
+      riverPoints[riverPoints.length - 2].y,
+      riverPoints[riverPoints.length - 1].x,
+      riverPoints[riverPoints.length - 1].y
+    );
+    mctx.lineWidth = 18;
+    mctx.stroke();
+
+    // Save mask
+    terrain.waterMask = mask;
+    terrain.waterCtx = mctx;
+
+    // --- Mountains (organic, multi-peak) ---
+    const mountains = [];
+    const numMountainRanges = 3;
+    for (let rI = 0; rI < numMountainRanges; rI++) {
+      const baseCenterX = worldWidth * (0.12 + 0.55 * (rI / (numMountainRanges - 1)));
+      const baseY = 90 + rI * 8;
+      const rangeWidth = 120 + Math.random() * 80;
+      const peakHeight = 55 + Math.random() * 45;
+      // Build a jagged mountain silhouette
+      const pts = [];
+      const numPeaks = 3 + Math.floor(Math.random() * 3);
+      pts.push({ x: baseCenterX - rangeWidth / 2, y: baseY });
+      for (let pI = 0; pI < numPeaks; pI++) {
+        const px = baseCenterX - rangeWidth / 2 + (rangeWidth) * ((pI + 0.5) / numPeaks);
+        const ph = peakHeight * (0.6 + Math.random() * 0.6);
+        pts.push({ x: px, y: baseY - ph });
+        // Valley between peaks
+        if (pI < numPeaks - 1) {
+          const vx = baseCenterX - rangeWidth / 2 + (rangeWidth) * ((pI + 1) / numPeaks);
+          pts.push({ x: vx, y: baseY - ph * 0.35 });
+        }
       }
-      if (nearRiver) continue;
-      // Avoid mountains (top strip)
-      if (y < 70) continue;
-      terrainFeatures.trees.push({
+      pts.push({ x: baseCenterX + rangeWidth / 2, y: baseY });
+      mountains.push({ points: pts, baseY, snow: Math.random() > 0.4 });
+    }
+    terrain.features.mountains = mountains;
+
+    // --- Trees: scattered on land only ---
+    const trees = [];
+    let attempts = 0;
+    while (trees.length < 45 && attempts < 400) {
+      attempts++;
+      const x = Math.random() * worldWidth;
+      const y = Math.random() * worldHeight;
+      if (isWater(x, y)) continue;
+      // Keep trees out of the mountain strip (top area)
+      if (y < 100) continue;
+      // Don't overcrowd
+      let tooClose = false;
+      for (let t of trees) {
+        if (Math.hypot(x - t.x, y - t.y) < 22) { tooClose = true; break; }
+      }
+      if (tooClose) continue;
+      trees.push({
         x, y,
-        size: 8 + Math.random() * 8,
-        color: Math.random() > 0.5 ? '#3a7a3a' : '#2f6a2f'
+        size: 7 + Math.random() * 8,
+        type: Math.random() > 0.35 ? 'pine' : 'round',
+        color: Math.random() > 0.5 ? '#3a7a3a' : '#2f6a2f',
+        trunkH: 5 + Math.random() * 4
       });
     }
+    terrain.features.trees = trees;
+
+    // --- Rocks: small grey boulders on land ---
+    const rocks = [];
+    for (let i = 0; i < 18; i++) {
+      const x = Math.random() * worldWidth;
+      const y = Math.random() * worldHeight;
+      if (isWater(x, y)) continue;
+      if (y < 100) continue;
+      rocks.push({
+        x, y,
+        rx: 3 + Math.random() * 5,
+        ry: 2 + Math.random() * 3,
+        rot: Math.random() * Math.PI
+      });
+    }
+    terrain.features.rocks = rocks;
+
+    // --- Flowers: tiny colorful dots on land ---
+    const flowers = [];
+    for (let i = 0; i < 35; i++) {
+      const x = Math.random() * worldWidth;
+      const y = Math.random() * worldHeight;
+      if (isWater(x, y)) continue;
+      if (y < 100) continue;
+      flowers.push({
+        x, y,
+        color: ['#e8a0b8', '#f0d060', '#d0a0e0', '#ffffff'][Math.floor(Math.random() * 4)],
+        size: 1.5 + Math.random() * 1.5
+      });
+    }
+    terrain.features.flowers = flowers;
   }
 
   function resizeCanvas() {
@@ -671,117 +649,260 @@
     drawWorld();
   }
 
-  // ---------- terrain drawing ----------
+  // ---------- natural terrain drawing ----------
   function drawTerrain() {
-    // Base grass gradient
+    // 1. Base grass gradient (varied tones)
     const grad = ctx.createLinearGradient(0, 0, 0, worldHeight);
-    grad.addColorStop(0, '#eef5c8');
-    grad.addColorStop(0.5, '#e2eeb0');
-    grad.addColorStop(1, '#d6e6a0');
+    grad.addColorStop(0, '#e6f0c0');
+    grad.addColorStop(0.35, '#d8e8a8');
+    grad.addColorStop(0.75, '#cce090');
+    grad.addColorStop(1, '#c0d888');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
-    // Mountains along the top
-    for (let m of terrainFeatures.mountains) {
-      const left = m.x - m.w / 2;
-      const right = m.x + m.w / 2;
-      const baseY = 80;
-      const peakY = baseY - m.h;
-
-      // Mountain body
+    // Add subtle noise patches for natural variation
+    ctx.save();
+    for (let i = 0; i < 60; i++) {
+      // deterministic pseudo-random based on i
+      const seedX = (Math.sin(i * 12.9898) * 43758.5453) % 1;
+      const seedY = (Math.sin(i * 78.233) * 43758.5453) % 1;
+      const x = Math.abs(seedX) * worldWidth;
+      const y = Math.abs(seedY) * worldHeight;
+      const rx = 30 + (Math.abs(seedX) * 60);
+      const ry = 20 + (Math.abs(seedY) * 40);
       ctx.beginPath();
-      ctx.moveTo(left, baseY);
-      ctx.lineTo(m.x, peakY);
-      ctx.lineTo(right, baseY);
+      ctx.ellipse(x, y, rx, ry, 0, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(160, 200, 100, 0.12)';
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 2. Mountains with gradient shading
+    for (let m of terrain.features.mountains) {
+      const pts = m.points;
+      if (pts.length < 3) continue;
+
+      // Mountain body gradient (brown-grey)
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y);
+      }
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
       ctx.closePath();
-      ctx.fillStyle = '#9a8868';
+
+      const minX = Math.min(...pts.map(p => p.x));
+      const maxX = Math.max(...pts.map(p => p.x));
+      const maxY = m.baseY;
+      const minY = Math.min(...pts.map(p => p.y));
+      const mg = ctx.createLinearGradient(0, minY, 0, maxY);
+      mg.addColorStop(0, '#b0a080');
+      mg.addColorStop(0.5, '#95836a');
+      mg.addColorStop(1, '#6e5c46');
+      ctx.fillStyle = mg;
       ctx.fill();
 
-      // Shading on right side
-      ctx.beginPath();
-      ctx.moveTo(m.x, peakY);
-      ctx.lineTo(right, baseY);
-      ctx.lineTo(m.x, baseY);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(80, 65, 45, 0.25)';
-      ctx.fill();
-
-      // Snow cap
+      // Snow caps: small white patches on the highest peaks
       if (m.snow) {
-        ctx.beginPath();
-        ctx.moveTo(m.x - m.w * 0.18, peakY + m.h * 0.3);
-        ctx.lineTo(m.x, peakY);
-        ctx.lineTo(m.x + m.w * 0.18, peakY + m.h * 0.3);
-        ctx.closePath();
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
+        for (let i = 1; i < pts.length - 1; i++) {
+          const p = pts[i];
+          const prev = pts[i - 1];
+          const next = pts[i + 1];
+          // Peak if higher than both neighbors
+          if (p.y < prev.y && p.y < next.y) {
+            const snowSize = 8 + Math.random() * 4;
+            ctx.beginPath();
+            ctx.moveTo(p.x - snowSize, p.y + snowSize * 0.7);
+            ctx.lineTo(p.x, p.y - 2);
+            ctx.lineTo(p.x + snowSize, p.y + snowSize * 0.7);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fill();
+          }
+        }
       }
     }
 
-    // River (winding)
-    if (terrainFeatures.river && terrainFeatures.river.length > 1) {
+    // 3. Draw river (natural gradient from source to lake)
+    if (terrain.features.river && terrain.features.river.length > 1) {
+      const rp = terrain.features.river;
+      // Outer bank (darker)
       ctx.beginPath();
-      ctx.moveTo(terrainFeatures.river[0].x, terrainFeatures.river[0].y);
-      for (let i = 1; i < terrainFeatures.river.length; i++) {
-        const p = terrainFeatures.river[i];
-        const prev = terrainFeatures.river[i - 1];
-        // Smooth curve using midpoint quadratic
-        const mx = (prev.x + p.x) / 2;
-        const my = (prev.y + p.y) / 2;
+      ctx.moveTo(rp[0].x, rp[0].y);
+      for (let i = 1; i < rp.length; i++) {
+        const prev = rp[i - 1];
+        const curr = rp[i];
+        const mx = (prev.x + curr.x) / 2;
+        const my = (prev.y + curr.y) / 2;
         ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
       }
-      ctx.lineWidth = 16;
-      ctx.strokeStyle = '#7ab8d8';
+      ctx.quadraticCurveTo(rp[rp.length - 2].x, rp[rp.length - 2].y, rp[rp.length - 1].x, rp[rp.length - 1].y);
+      ctx.strokeStyle = '#5a8a9a';
+      ctx.lineWidth = 22;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke();
 
-      // River highlight
-      ctx.lineWidth = 8;
-      ctx.strokeStyle = '#a8d4ea';
-      ctx.stroke();
-    }
-
-    // Lake
-    const lake = terrainFeatures.lake;
-    if (lake) {
+      // Water (lighter gradient)
       ctx.beginPath();
-      ctx.ellipse(lake.cx, lake.cy, lake.rx, lake.ry, 0, 0, 2 * Math.PI);
-      const lakeGrad = ctx.createRadialGradient(
-        lake.cx, lake.cy, 2,
-        lake.cx, lake.cy, Math.max(lake.rx, lake.ry)
-      );
-      lakeGrad.addColorStop(0, '#a8d4ea');
-      lakeGrad.addColorStop(1, '#5a9ec0');
-      ctx.fillStyle = lakeGrad;
-      ctx.fill();
+      ctx.moveTo(rp[0].x, rp[0].y);
+      for (let i = 1; i < rp.length; i++) {
+        const prev = rp[i - 1];
+        const curr = rp[i];
+        const mx = (prev.x + curr.x) / 2;
+        const my = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+      }
+      ctx.quadraticCurveTo(rp[rp.length - 2].x, rp[rp.length - 2].y, rp[rp.length - 1].x, rp[rp.length - 1].y);
+      const rg = ctx.createLinearGradient(rp[0].x, rp[0].y, rp[rp.length - 1].x, rp[rp.length - 1].y);
+      rg.addColorStop(0, '#a8d4ea');
+      rg.addColorStop(1, '#6aa8c8');
+      ctx.strokeStyle = rg;
+      ctx.lineWidth = 15;
+      ctx.stroke();
 
-      // Lake outline
-      ctx.strokeStyle = '#3a7a9a';
-      ctx.lineWidth = 2;
+      // Highlights
+      ctx.beginPath();
+      ctx.moveTo(rp[0].x, rp[0].y);
+      for (let i = 1; i < rp.length; i++) {
+        const prev = rp[i - 1];
+        const curr = rp[i];
+        const mx = (prev.x + curr.x) / 2;
+        const my = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+      }
+      ctx.quadraticCurveTo(rp[rp.length - 2].x, rp[rp.length - 2].y, rp[rp.length - 1].x, rp[rp.length - 1].y);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 4;
       ctx.stroke();
     }
 
-    // Trees (small triangular pines)
-    for (let t of terrainFeatures.trees) {
+    // 4. Draw lake (organic shape matching the mask)
+    const lakeCX = worldWidth * 0.76;
+    const lakeCY = worldHeight * 0.72;
+    const lakeRadius = Math.min(worldWidth, worldHeight) * 0.20;
+
+    // Rebuild the same lake points used in mask
+    const lakePoints = [];
+    const numLakePts = 14;
+    for (let i = 0; i < numLakePts; i++) {
+      const ang = (i / numLakePts) * Math.PI * 2;
+      const rVar = lakeRadius * (0.75 + 0.35 * Math.sin(ang * 3 + 1.2) + 0.15 * Math.sin(ang * 7 + 0.5));
+      lakePoints.push({
+        x: lakeCX + Math.cos(ang) * rVar,
+        y: lakeCY + Math.sin(ang) * rVar * 0.75
+      });
+    }
+
+    // Lake outer bank
+    ctx.beginPath();
+    for (let i = 0; i < lakePoints.length; i++) {
+      const p0 = lakePoints[(i - 1 + lakePoints.length) % lakePoints.length];
+      const p1 = lakePoints[i];
+      const p2 = lakePoints[(i + 1) % lakePoints.length];
+      const p3 = lakePoints[(i + 2) % lakePoints.length];
+      if (i === 0) ctx.moveTo(p1.x, p1.y);
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#5a8a9a';
+    ctx.fill();
+
+    // Lake water (radial gradient)
+    const lakeGrad = ctx.createRadialGradient(
+      lakeCX - lakeRadius * 0.2, lakeCY - lakeRadius * 0.2, 5,
+      lakeCX, lakeCY, lakeRadius * 1.2
+    );
+    lakeGrad.addColorStop(0, '#b8e0f0');
+    lakeGrad.addColorStop(0.6, '#7ab8d8');
+    lakeGrad.addColorStop(1, '#4a8aaa');
+    ctx.fillStyle = lakeGrad;
+    ctx.fill();
+
+    // Lake shimmer highlights
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 5; i++) {
+      const ang = (i / 5) * Math.PI * 2 + 0.3;
+      const r1 = lakeRadius * 0.3;
+      const r2 = lakeRadius * 0.6;
+      ctx.beginPath();
+      ctx.arc(lakeCX, lakeCY, r1 + i * 3, ang, ang + 0.8);
+      ctx.stroke();
+    }
+
+    // 5. Draw rocks
+    for (let rk of terrain.features.rocks) {
+      ctx.save();
+      ctx.translate(rk.x, rk.y);
+      ctx.rotate(rk.rot);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rk.rx, rk.ry, 0, 0, 2 * Math.PI);
+      ctx.fillStyle = '#8a8378';
+      ctx.fill();
+      ctx.strokeStyle = '#5a5450';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // Highlight
+      ctx.beginPath();
+      ctx.ellipse(-rk.rx * 0.3, -rk.ry * 0.3, rk.rx * 0.4, rk.ry * 0.4, 0, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(220, 215, 205, 0.5)';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 6. Draw flowers (tiny dots of color)
+    for (let fl of terrain.features.flowers) {
+      ctx.beginPath();
+      ctx.arc(fl.x, fl.y, fl.size, 0, 2 * Math.PI);
+      ctx.fillStyle = fl.color;
+      ctx.fill();
+    }
+
+    // 7. Draw trees (pine or round canopy)
+    for (let t of terrain.features.trees) {
       // Trunk
       ctx.fillStyle = '#5a3a1a';
-      ctx.fillRect(t.x - 1.5, t.y + t.size * 0.4, 3, t.size * 0.5);
-      // Foliage (two triangles)
-      ctx.fillStyle = t.color;
-      ctx.beginPath();
-      ctx.moveTo(t.x, t.y - t.size * 0.6);
-      ctx.lineTo(t.x - t.size * 0.5, t.y + t.size * 0.25);
-      ctx.lineTo(t.x + t.size * 0.5, t.y + t.size * 0.25);
-      ctx.closePath();
-      ctx.fill();
+      ctx.fillRect(t.x - 1.5, t.y, 3, t.trunkH);
 
-      ctx.beginPath();
-      ctx.moveTo(t.x, t.y - t.size * 0.1);
-      ctx.lineTo(t.x - t.size * 0.4, t.y + t.size * 0.55);
-      ctx.lineTo(t.x + t.size * 0.4, t.y + t.size * 0.55);
-      ctx.closePath();
-      ctx.fill();
+      if (t.type === 'pine') {
+        // Pine: stacked triangles
+        ctx.fillStyle = t.color;
+        const baseY = t.y + t.trunkH;
+        const layers = 3;
+        for (let l = 0; l < layers; l++) {
+          const lw = t.size * (1 - l * 0.25);
+          const ly = baseY - l * (t.size * 0.5);
+          ctx.beginPath();
+          ctx.moveTo(t.x, ly - t.size * 0.9);
+          ctx.lineTo(t.x - lw, ly + t.size * 0.1);
+          ctx.lineTo(t.x + lw, ly + t.size * 0.1);
+          ctx.closePath();
+          ctx.fill();
+        }
+      } else {
+        // Round canopy: overlapping circles
+        ctx.fillStyle = t.color;
+        const cy = t.y + t.trunkH - t.size * 0.4;
+        ctx.beginPath();
+        ctx.arc(t.x, cy, t.size * 0.75, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(t.x - t.size * 0.4, cy + t.size * 0.2, t.size * 0.5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(t.x + t.size * 0.4, cy + t.size * 0.2, t.size * 0.5, 0, 2 * Math.PI);
+        ctx.fill();
+        // Highlight
+        ctx.beginPath();
+        ctx.arc(t.x - t.size * 0.2, cy - t.size * 0.2, t.size * 0.3, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(160, 220, 140, 0.4)';
+        ctx.fill();
+      }
     }
   }
 
@@ -809,7 +930,6 @@
         ctx.beginPath();
         ctx.arc(a.x, a.y, baseRadius + 1.2, 0, 2 * Math.PI);
         ctx.fill();
-        // Tiny glow
         ctx.strokeStyle = 'rgba(34, 170, 34, 0.4)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
@@ -829,10 +949,20 @@
     return Math.min(MAX_VISIBLE, Math.max(0, Math.round(pop)));
   }
 
-  function spawnAgent(state) {
+  // ---------- spawn an agent ON LAND (never water) ----------
+  function spawnAgentOnLand(state) {
+    // Try up to 100 random locations to find a land point
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const x = Math.random() * (worldWidth - 10) + 5;
+      const y = Math.random() * (worldHeight - 10) + 5;
+      if (!isWater(x, y)) {
+        return { x, y, state: state || 'normal' };
+      }
+    }
+    // Fallback: return a point in the top-left corner (usually land)
     return {
-      x: Math.random() * (worldWidth - 10) + 5,
-      y: Math.random() * (worldHeight - 10) + 5,
+      x: worldWidth * 0.1,
+      y: worldHeight * 0.3,
       state: state || 'normal'
     };
   }
@@ -846,7 +976,7 @@
 
   function applyBirths(births) {
     for (let i = 0; i < births; i++) {
-      agents.push(spawnAgent('born'));
+      agents.push(spawnAgentOnLand('born'));
     }
   }
 
@@ -921,8 +1051,6 @@
     const dt = BASE_SPEED * speedFactor;
     currentTime += dt;
 
-    // NOTE: No T_MAX cap — simulation runs indefinitely
-
     clearOldDying();
     const { births, deaths } = tick(dt);
     applyBirths(births);
@@ -970,7 +1098,6 @@
   let chartSize, chartGrowth, chartPerCapita;
 
   function updateCharts() {
-    // Cap number of displayed points for performance on long runs
     const MAX_POINTS = 800;
     let times = historyTimes;
     let pops = historyPops;
@@ -986,7 +1113,6 @@
         growth.push(historyGrowth[i]);
         perCap.push(historyPerCapita[i]);
       }
-      // Always include the last point
       const lastIdx = historyTimes.length - 1;
       if (times[times.length - 1] !== historyTimes[lastIdx]) {
         times.push(historyTimes[lastIdx]);
@@ -1103,7 +1229,7 @@
     agents = [];
     const dots = popToDots(N0);
     for (let i = 0; i < dots; i++) {
-      agents.push(spawnAgent('normal'));
+      agents.push(spawnAgentOnLand('normal'));
     }
 
     historyTimes.push(0);
