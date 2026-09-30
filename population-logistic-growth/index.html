@@ -808,7 +808,7 @@
 
   <div class="speed-panel panel">
     <div class="speed-label">
-      <span>Simulation Speed</span>
+      <span>Animation Smoothness</span>
       <span id="speedValue">8</span>
     </div>
     <input type="range" id="speedSlider" min="1" max="20" value="8" step="1">
@@ -823,10 +823,16 @@
   let r = 1.2;
   let K = 600;
 
-  // Simulation speed: how many "time units" pass per animation frame.
-  // The slider sets a multiplier; BASE_DT is the time step at speed = 1.
-  let speedFactor = 8;
-  const BASE_DT = 0.0025;   // time advance per frame at speed 1
+  // ---------------------------------------------------------------
+  // SIMULATION TIME STEP — fixed, so statistics are independent of
+  // how fast the animation runs. The speed slider only changes how
+  // many sub-steps we do per frame (visual smoothness), NOT the
+  // underlying math.
+  // ---------------------------------------------------------------
+  const SIM_DT = 0.02;        // fixed time step per sub-step
+  const BASE_SUBSTEPS = 1;    // sub-steps per frame at speed = 1
+
+  let speedFactor = 8;         // controls sub-steps per frame (visual only)
 
   // ---------- settings ----------
   const settings = {
@@ -837,9 +843,9 @@
     showFlowers: true
   };
 
-  // Natural disaster scheduling: minimum gap between disasters (in time units)
-  const NATURAL_DISASTER_MIN_GAP = 40;
-  const NATURAL_DISASTER_MAX_GAP = 80;
+  // Natural disaster gap (in time units) — made ~60% more common
+  const NATURAL_DISASTER_MIN_GAP = 15;
+  const NATURAL_DISASTER_MAX_GAP = 32;
   let nextDisasterTime = Infinity;
 
   // ---------- simulation state ----------
@@ -1105,7 +1111,7 @@
     }
     terrain.features.rocks = rocks;
 
-    // --- Flowers (now respect the toggle) ---
+    // --- Flowers ---
     const flowers = [];
     if (settings.showFlowers) {
       for (let i = 0; i < biomeData.flowerCount; i++) {
@@ -1193,7 +1199,36 @@
     canvas.width = worldWidth;
     canvas.height = worldHeight;
     generateTerrain();
+    // Re-place all existing agents so none end up on water
+    respawnAgentsOnLand();
     drawWorld();
+  }
+
+  // ---------------------------------------------------------------
+  // Move every living agent to a valid land position. Called after
+  // terrain regeneration (settings toggles / resize) so no species
+  // ends up standing on a lake.
+  // ---------------------------------------------------------------
+  function respawnAgentsOnLand() {
+    for (let a of agents) {
+      // Try to find a nearby land spot first (keeps visual continuity)
+      let placed = false;
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const nx = a.x + (Math.random() - 0.5) * 80;
+        const ny = a.y + (Math.random() - 0.5) * 80;
+        if (nx > 5 && nx < worldWidth - 5 && ny > 5 && ny < worldHeight - 5 &&
+            !isWater(nx, ny)) {
+          a.x = nx; a.y = ny;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        // Fallback: fully random land spot
+        const pos = spawnAgentOnLand();
+        a.x = pos.x; a.y = pos.y;
+      }
+    }
   }
 
   // ---------- draw terrain ----------
@@ -1414,7 +1449,7 @@
     }
   }
 
-  // ---------- tick ----------
+  // ---------- tick (uses fixed SIM_DT, independent of animation speed) ----------
   function tick(dt) {
     const N = population;
     if (N <= 0) return { births: 0, deaths: 0 };
@@ -1549,7 +1584,7 @@
   }
 
   // ---------- natural disaster scheduling ----------
-  // Now uses a much larger gap so disasters are rare, not frequent.
+  // Gaps reduced by ~60% so disasters are noticeably more common.
   function scheduleNextNaturalDisaster() {
     if (!settings.naturalDisasters) {
       nextDisasterTime = Infinity;
@@ -1571,34 +1606,41 @@
   }
 
   // ---------- animation ----------
+  // The animation loop runs one tick of SIM_DT per "sub-step", and the
+  // number of sub-steps per frame is controlled by the speed slider.
+  // This means the SPEED SLIDER ONLY AFFECTS SMOOTHNESS — not the math.
+  // Over the same wall-clock time, whatever speed you choose, you get
+  // statistically identical simulation results.
   function stepSimulation() {
     if (!isRunning || isExtinct) return;
 
-    // The simulation speed slider directly controls how much time
-    // advances per frame. At speed 1, dt is tiny; at speed 20, dt is 20x larger.
-    const dt = BASE_DT * speedFactor;
-    currentTime += dt;
+    // Determine sub-steps per frame from speed slider
+    const substeps = Math.max(1, Math.round(BASE_SUBSTEPS * speedFactor));
 
-    clearOldDying();
-    const { births, deaths } = tick(dt);
-    applyBirths(births);
-    applyDeaths(deaths);
+    // Run N sub-steps, each advancing SIM_DT
+    for (let s = 0; s < substeps; s++) {
+      currentTime += SIM_DT;
 
-    checkNaturalDisaster();
+      clearOldDying();
+      const { births, deaths } = tick(SIM_DT);
+      applyBirths(births);
+      applyDeaths(deaths);
 
+      checkNaturalDisaster();
+
+      if (checkExtinction()) return;
+      if (!isRunning) return;
+    }
+
+    // Draw / update only once per frame (visual efficiency)
     drawWorld();
     updateStats();
     updateCharts();
 
     document.getElementById('tickDisplay').textContent =
       `t = ${currentTime.toFixed(2)} | N = ${population}`;
-    document.getElementById('birthsDisplay').textContent = births;
-    document.getElementById('deathsDisplay').textContent = deaths;
-
-    if (checkExtinction()) return;
 
     if (isRunning) animationFrame = requestAnimationFrame(stepSimulation);
-    else drawWorld();
   }
 
   // ---------- statistics ----------
@@ -1765,11 +1807,13 @@
   function refreshSimulation() {
     currentBiome = pickBiome();
     generateTerrain();
+    respawnAgentsOnLand();
     resetState();
   }
 
   function restartSimulation() {
     if (savedTerrainSnapshot) restoreTerrainSnapshot();
+    respawnAgentsOnLand();
     resetState();
   }
 
@@ -1827,8 +1871,8 @@
       restartSimulation();
     });
 
-    // Speed slider: updates speedFactor directly. No restart needed —
-    // the next frame will use the new value.
+    // Speed slider only changes how many sub-steps we do per frame.
+    // No restart needed.
     speedSlider.addEventListener('input', (e) => {
       speedFactor = parseFloat(e.target.value);
       document.getElementById('speedValue').textContent = speedFactor;
@@ -1875,34 +1919,38 @@
     document.getElementById('toggleDisasters').addEventListener('change', (e) => {
       settings.naturalDisasters = e.target.checked;
       if (settings.naturalDisasters) {
-        // First one comes fairly soon, then long gaps afterwards
-        nextDisasterTime = currentTime + 8 + Math.random() * 10;
+        nextDisasterTime = currentTime + 6 + Math.random() * 8;
       } else {
         nextDisasterTime = Infinity;
       }
     });
 
+    // Terrain toggles: regenerate, then respawn agents safely on land.
     document.getElementById('toggleLakes').addEventListener('change', (e) => {
       settings.showLakes = e.target.checked;
       generateTerrain();
+      respawnAgentsOnLand();
       drawWorld();
     });
 
     document.getElementById('toggleTrees').addEventListener('change', (e) => {
       settings.showTrees = e.target.checked;
       generateTerrain();
+      respawnAgentsOnLand();
       drawWorld();
     });
 
     document.getElementById('toggleRocks').addEventListener('change', (e) => {
       settings.showRocks = e.target.checked;
       generateTerrain();
+      respawnAgentsOnLand();
       drawWorld();
     });
 
     document.getElementById('toggleFlowers').addEventListener('change', (e) => {
       settings.showFlowers = e.target.checked;
       generateTerrain();
+      respawnAgentsOnLand();
       drawWorld();
     });
   }
