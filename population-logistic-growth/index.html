@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logistic Growth · Population Dynamics</title>
+  <!-- Chart.js for clean, responsive plotting -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(145deg, #f8fafc 0%, #eef2f6 100%);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(4px);
+      border-radius: 2rem;
+      box-shadow: 0 25px 40px -12px rgba(0, 20, 30, 0.35),
+                  inset 0 1px 3px rgba(255, 255, 255, 0.8);
+      padding: 2rem 2rem 2rem 2rem;
+      max-width: 1000px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #0b2b3b;
+      margin-top: 0;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .subtitle {
+      color: #2c4a5e;
+      margin-bottom: 1.75rem;
+      font-weight: 400;
+      font-size: 1.05rem;
+      border-left: 4px solid #3b8fc2;
+      padding-left: 1rem;
+      background: rgba(59, 143, 194, 0.05);
+      border-radius: 0 8px 8px 0;
+      line-height: 1.4;
+    }
+
+    .equation-badge {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: #1e3b4b;
+      color: #d4edff;
+      padding: 0.3rem 1rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      display: inline-block;
+      margin-bottom: 1.25rem;
+      letter-spacing: 0.3px;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 360px;
+      width: 100%;
+      margin-bottom: 2rem;
+      background: #ffffffd9;
+      border-radius: 1.5rem;
+      padding: 0.75rem;
+      box-shadow: 0 8px 20px -8px rgba(0, 40, 60, 0.2);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem 1.75rem;
+      margin-top: 1rem;
+      background: #ffffffc2;
+      padding: 1.5rem 1.5rem 1.75rem;
+      border-radius: 1.5rem;
+      backdrop-filter: blur(2px);
+      border: 1px solid #ffffff;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+      color: #0e3d53;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+    }
+
+    .slider-group label span:last-child {
+      font-family: 'SF Mono', monospace;
+      background: #d7e7f1;
+      padding: 0.15rem 0.7rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #0a3142;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 7px;
+      background: linear-gradient(90deg, #b3d9f0 0%, #2a6f97 100%);
+      border-radius: 20px;
+      outline: none;
+      margin: 0.35rem 0;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0, 30, 50, 0.4), 0 0 0 2px #1b6b99;
+      cursor: pointer;
+      transition: 0.1s;
+      border: 2px solid #ffffff;
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover {
+      background: #f0f9ff;
+      transform: scale(1.15);
+      box-shadow: 0 6px 14px rgba(0, 50, 70, 0.5), 0 0 0 2px #0a4b6e;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.5rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed #b8d1e0;
+      color: #1e4a62;
+      font-size: 0.95rem;
+    }
+
+    .stat-item {
+      background: #e2eef9;
+      border-radius: 40px;
+      padding: 0.3rem 1.2rem;
+      font-family: 'SF Mono', monospace;
+      font-weight: 500;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      box-shadow: inset 0 1px 4px rgba(255,255,255,0.8), 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    .stat-item strong {
+      color: #0b3b4f;
+      font-weight: 700;
+    }
+
+    .note {
+      font-size: 0.85rem;
+      color: #3f6279;
+      text-align: right;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      .card { padding: 1.5rem; }
+      h1 { font-size: 1.5rem; }
+      .chart-container { height: 280px; }
+      .controls { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>
+    <span>📈 Logistic Growth</span>
+  </h1>
+  <div class="equation-badge">
+    dN/dt = r · N · (1 − N/K)
+  </div>
+  <div class="subtitle">
+    Population dynamics with carrying capacity · adjust parameters below
+  </div>
+
+  <!-- Chart area -->
+  <div class="chart-container">
+    <canvas id="logisticChart"></canvas>
+  </div>
+
+  <!-- Interactive controls -->
+  <div class="controls">
+    <div class="slider-group">
+      <label>
+        <span>🌱 Growth rate (r)</span>
+        <span id="rValue">0.80</span>
+      </label>
+      <input type="range" id="rSlider" min="0.1" max="1.5" value="0.8" step="0.01">
+    </div>
+    <div class="slider-group">
+      <label>
+        <span>🏔️ Carrying capacity (K)</span>
+        <span id="kValue">1000</span>
+      </label>
+      <input type="range" id="kSlider" min="200" max="2000" value="1000" step="10">
+    </div>
+    <div class="slider-group">
+      <label>
+        <span>🔵 Initial population (N₀)</span>
+        <span id="n0Value">50</span>
+      </label>
+      <input type="range" id="n0Slider" min="1" max="500" value="50" step="1">
+    </div>
+  </div>
+
+  <!-- Live stats -->
+  <div class="stats">
+    <div class="stat-item">
+      <span>⏱️ Time to K/2</span>
+      <strong id="halfTimeDisplay">—</strong>
+    </div>
+    <div class="stat-item">
+      <span>📊 Max growth rate</span>
+      <strong id="maxRateDisplay">—</strong>
+    </div>
+    <div class="note">
+      N(t) solved numerically (RK4)
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- configuration -----
+    const T_MAX = 30;          // total time units
+    const STEPS = 300;         // number of points for smooth curve
+    const DT = T_MAX / STEPS;  // step size
+
+    // ----- state (current parameter values) -----
+    let r = 0.8;
+    let K = 1000;
+    let N0 = 50;
+
+    // ----- chart instance -----
+    let chart;
+
+    // ----- helper: compute logistic curve using RK4 (accurate) -----
+    function computeLogisticCurve(rVal, KVal, N0Val) {
+      const times = [];
+      const populations = [];
+
+      // ensure N0 is within (0, K] — but slider ensures N0 <= 500 and K >= 200, so always < K.
+      // edge case: if N0 == K (impossible with sliders, but safe)
+      let N = Math.min(N0Val, KVal * 0.999); // avoid exactly K if slider glitch
+
+      for (let i = 0; i <= STEPS; i++) {
+        const t = i * DT;
+        times.push(t);
+        populations.push(N);
+
+        // RK4 step for dN/dt = r * N * (1 - N/K)
+        const f = (n) => rVal * n * (1 - n / KVal);
+
+        const k1 = f(N);
+        const k2 = f(N + 0.5 * DT * k1);
+        const k3 = f(N + 0.5 * DT * k2);
+        const k4 = f(N + DT * k3);
+
+        N = N + (DT / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+
+        // clamp to avoid tiny overshoot due to numerical error
+        if (N > KVal) N = KVal;
+        if (N < 0) N = 0;
+      }
+
+      return { times, populations };
+    }
+
+    // ----- compute derived metrics (for stats) -----
+    function computeMetrics(rVal, KVal, N0Val) {
+      // time to reach K/2 (half carrying capacity) — we find from computed curve
+      const { times, populations } = computeLogisticCurve(rVal, KVal, N0Val);
+      const halfK = KVal / 2;
+
+      let timeToHalf = null;
+      for (let i = 0; i < populations.length; i++) {
+        if (populations[i] >= halfK) {
+          if (i === 0) timeToHalf = 0;
+          else {
+            // linear interpolation for better precision
+            const prevN = populations[i-1];
+            const currN = populations[i];
+            if (currN !== prevN) {
+              const frac = (halfK - prevN) / (currN - prevN);
+              timeToHalf = times[i-1] + frac * DT;
+            } else {
+              timeToHalf = times[i];
+            }
+          }
+          break;
+        }
+      }
+      // if never reached (shouldn't happen since N0 may be > K/2? but we start from N0 which can be > K/2)
+      // Actually if N0 > K/2, timeToHalf is 0 — but we want the time from start, but it's already above half at t=0.
+      // For display, we indicate "already ≥ K/2" — we'll handle in formatting.
+      if (N0Val >= halfK) {
+        timeToHalf = 0;   // at time zero, population is already ≥ K/2
+      }
+
+      // Max growth rate (theoretical) = r * K / 4  (occurs at N = K/2)
+      const maxRate = (rVal * KVal) / 4;
+
+      return { timeToHalf, maxRate };
+    }
+
+    // ----- update chart and stats -----
+    function updateAll() {
+      const { times, populations } = computeLogisticCurve(r, K, N0);
+      const { timeToHalf, maxRate } = computeMetrics(r, K, N0);
+
+      // Update chart data
+      chart.data.labels = times.map(t => t.toFixed(2));
+      chart.data.datasets[0].data = populations;
+
+      // Update y-axis suggestion (max y)
+      const yMax = Math.max(K * 1.1, ...populations) * 1.02;
+      chart.options.scales.y.max = Math.ceil(yMax / 100) * 100;
+      // Also update suggested max if needed
+      chart.options.scales.y.suggestedMax = yMax;
+
+      chart.update();
+
+      // Update stats display
+      const halfTimeDisplay = document.getElementById('halfTimeDisplay');
+      if (N0 >= K / 2) {
+        halfTimeDisplay.textContent = 'already ≥ K/2';
+      } else if (timeToHalf === null || timeToHalf === undefined) {
+        halfTimeDisplay.textContent = '—';
+      } else {
+        halfTimeDisplay.textContent = timeToHalf.toFixed(2) + ' t';
+      }
+
+      document.getElementById('maxRateDisplay').textContent = maxRate.toFixed(2) + ' / t';
+
+      // Update slider value labels
+      document.getElementById('rValue').textContent = r.toFixed(2);
+      document.getElementById('kValue').textContent = Math.round(K);
+      document.getElementById('n0Value').textContent = Math.round(N0);
+    }
+
+    // ----- initialize Chart.js -----
+    function initChart() {
+      const ctx = document.getElementById('logisticChart').getContext('2d');
+
+      // initial dummy data (will be replaced immediately)
+      const { times, populations } = computeLogisticCurve(r, K, N0);
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: times.map(t => t.toFixed(2)),
+          datasets: [{
+            label: 'Population N(t)',
+            data: populations,
+            borderColor: '#1b6b99',
+            backgroundColor: 'rgba(27, 107, 153, 0.08)',
+            borderWidth: 3.5,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#0b4b6b',
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 2,
+            fill: true,
+            tension: 0.2,        // slight smoothing, but logistic is smooth anyway
+            cubicInterpolationMode: 'monotone',
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 300,      // smooth transition when parameters change
+            easing: 'easeOutQuad'
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              align: 'end',
+              labels: {
+                boxWidth: 14,
+                boxHeight: 14,
+                borderRadius: 4,
+                usePointStyle: true,
+                pointStyle: 'line',
+                color: '#0f3b4f',
+                font: { weight: '500', size: 12 }
+              }
+            },
+            tooltip: {
+              backgroundColor: '#0b2b3b',
+              titleColor: '#e3f0fa',
+              bodyColor: '#cde1f0',
+              borderColor: '#3b8fc2',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: (context) => {
+                  let label = context.dataset.label || '';
+                  let value = context.parsed.y;
+                  return `${label}: ${value.toFixed(1)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Time (t)',
+                color: '#1e4a62',
+                font: { weight: '500', size: 12 }
+              },
+              grid: { color: '#d7e4ed', tickColor: '#b0c8d9' },
+              ticks: { maxTicksLimit: 12, color: '#2f566b' }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Population size (N)',
+                color: '#1e4a62',
+                font: { weight: '500', size: 12 }
+              },
+              grid: { color: '#d7e4ed' },
+              ticks: { color: '#2f566b' },
+              beginAtZero: true,
+              suggestedMax: K * 1.1,
+              min: 0
+            }
+          },
+          hover: {
+            mode: 'index',
+            intersect: false,
+          },
+          elements: {
+            line: {
+              borderJoinStyle: 'round',
+              borderCapStyle: 'round'
+            }
+          }
+        }
+      });
+
+      // initial stat update
+      updateAll();
+    }
+
+    // ----- attach event listeners to sliders -----
+    function bindSliders() {
+      const rSlider = document.getElementById('rSlider');
+      const kSlider = document.getElementById('kSlider');
+      const n0Slider = document.getElementById('n0Slider');
+
+      rSlider.addEventListener('input', (e) => {
+        r = parseFloat(e.target.value);
+        updateAll();
+      });
+
+      kSlider.addEventListener('input', (e) => {
+        K = parseFloat(e.target.value);
+        // ensure N0 doesn't exceed K (slider max 500, but if K gets smaller than N0, clamp N0)
+        if (N0 > K) {
+          N0 = Math.min(N0, K - 1);  // keep it below K
+          n0Slider.value = N0;
+        }
+        updateAll();
+      });
+
+      n0Slider.addEventListener('input', (e) => {
+        N0 = parseFloat(e.target.value);
+        // also ensure N0 doesn't exceed K (but slider max 500, K min 200, so often fine)
+        if (N0 > K) {
+          N0 = Math.max(1, Math.min(N0, K - 1));
+          n0Slider.value = N0;
+        }
+        updateAll();
+      });
+
+      // Also keep a check: when K slider changes, we might need to adjust N0 max dynamically? Not necessary,
+      // but we clamp N0 in update if it exceeds K.
+      // But we need to re-check after K changes. We do in the k slider event.
+    }
+
+    // ----- start everything -----
+    window.addEventListener('load', () => {
+      initChart();
+      bindSliders();
+    });
+
+  })();
+</script>
+</body>
+</html>
