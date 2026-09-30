@@ -182,9 +182,9 @@
       align-self: flex-end; margin-bottom: 0.3rem;
     }
 
-    /* ---- Stats panel ---- */
+    /* ---- Stats panel (positioned BELOW the legend to avoid overlap) ---- */
     .stats-panel {
-      position: absolute; top: 3.4rem; left: 1rem; width: 300px;
+      position: absolute; top: 5.2rem; left: 1rem; width: 300px;
       background: rgba(255, 253, 240, 0.96);
       border-radius: 12px; padding: 0.75rem 1rem 0.9rem 1rem;
       border: 2px solid #d4c48a;
@@ -197,13 +197,15 @@
       color: #3a3020; letter-spacing: 0.4px; text-transform: uppercase;
       border-bottom: 1px dashed #c8b87a; padding-bottom: 0.3rem;
       display: flex; justify-content: space-between; align-items: center;
+      gap: 0.5rem;
     }
     .stats-panel h3 .tick-mini {
-      font-family: 'SF Mono', monospace; font-size: 0.72rem;
-      background: #fff8e0; padding: 0.1rem 0.55rem;
+      font-family: 'SF Mono', monospace; font-size: 0.7rem;
+      background: #fff8e0; padding: 0.1rem 0.5rem;
       border-radius: 30px; border: 1px solid #c8b87a;
       color: #3a3020; font-weight: 700;
       text-transform: none; letter-spacing: 0;
+      white-space: nowrap;
     }
 
     .stat-row {
@@ -228,9 +230,9 @@
       background: #c8e0f0; color: #0a3a5a; border-color: #6aa0c8;
     }
 
-    /* ---- Legend ---- */
+    /* ---- Legend (top-left, next to title area) ---- */
     .legend-panel {
-      position: absolute; top: 1rem; left: 1rem;
+      position: absolute; top: 3.4rem; left: 1rem;
       background: rgba(255, 253, 240, 0.92);
       border-radius: 12px; padding: 0.5rem 0.85rem;
       border: 2px solid #d4c48a;
@@ -282,12 +284,14 @@
     </div>
   </div>
 
+  <!-- Legend -->
   <div class="legend-panel">
     <div class="legend-item"><span class="legend-swatch normal"></span> Alive</div>
     <div class="legend-item"><span class="legend-swatch born"></span> Born</div>
     <div class="legend-item"><span class="legend-x"></span> Died</div>
   </div>
 
+  <!-- Stats panel (positioned below the legend) -->
   <div class="stats-panel">
     <h3>📊 Statistics <span class="tick-mini" id="tickDisplay">t = 0.00 | N = 10</span></h3>
     <div class="stat-row">
@@ -433,207 +437,201 @@
 
   // ---------- terrain data ----------
   let terrain = {
-    waterMask: null,       // offscreen canvas: white = water, black = land
+    waterMask: null,
     waterCtx: null,
     features: {
-      lake: null,
+      lakes: [],       // multiple lakes now
       river: [],
-      mountains: [],
       trees: [],
+      shrubs: [],
       rocks: [],
       flowers: []
     }
   };
 
-  // ---------- habitat: is a point water? ----------
-  // Uses the offscreen water mask.
+  // ---------- habitat check ----------
   function isWater(x, y) {
     if (!terrain.waterCtx) return false;
     if (x < 0 || y < 0 || x >= worldWidth || y >= worldHeight) return false;
     const data = terrain.waterCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-    return data[0] > 128; // red channel high = water
+    return data[0] > 128;
   }
 
   // ---------- generate natural terrain ----------
   function generateTerrain() {
-    // --- Create offscreen water mask ---
+    // --- Water mask ---
     const mask = document.createElement('canvas');
     mask.width = worldWidth;
     mask.height = worldHeight;
     const mctx = mask.getContext('2d');
 
-    // Start all land (black)
     mctx.fillStyle = '#000000';
     mctx.fillRect(0, 0, worldWidth, worldHeight);
-
-    // --- Natural lake: organic blob shape ---
-    // Build a closed smooth path from polar points
-    const lakeCX = worldWidth * 0.76;
-    const lakeCY = worldHeight * 0.72;
-    const lakeRadius = Math.min(worldWidth, worldHeight) * 0.20;
-
-    const lakePoints = [];
-    const numLakePts = 14;
-    for (let i = 0; i < numLakePts; i++) {
-      const ang = (i / numLakePts) * Math.PI * 2;
-      // Radius varies smoothly for organic shape
-      const rVar = lakeRadius * (0.75 + 0.35 * Math.sin(ang * 3 + 1.2) + 0.15 * Math.sin(ang * 7 + 0.5));
-      lakePoints.push({
-        x: lakeCX + Math.cos(ang) * rVar,
-        y: lakeCY + Math.sin(ang) * rVar * 0.75   // slightly elliptical
-      });
-    }
-
-    // Draw lake as smooth closed curve on mask
     mctx.fillStyle = '#ffffff';
-    mctx.beginPath();
-    // Use cardinal spline for smoothness
-    for (let i = 0; i < lakePoints.length; i++) {
-      const p0 = lakePoints[(i - 1 + lakePoints.length) % lakePoints.length];
-      const p1 = lakePoints[i];
-      const p2 = lakePoints[(i + 1) % lakePoints.length];
-      const p3 = lakePoints[(i + 2) % lakePoints.length];
-      if (i === 0) mctx.moveTo(p1.x, p1.y);
-      // Catmull-Rom to Bezier
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-      mctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-    }
-    mctx.closePath();
-    mctx.fill();
-
-    // --- Natural river: winding taper from top-left to lake ---
-    const riverPoints = [];
-    const rSteps = 22;
-    const rStartX = worldWidth * 0.04;
-    const rStartY = worldHeight * 0.12;
-    const rEndX = lakeCX - lakeRadius * 0.4;
-    const rEndY = lakeCY - lakeRadius * 0.3;
-
-    for (let i = 0; i <= rSteps; i++) {
-      const t = i / rSteps;
-      // Base path
-      let x = rStartX + (rEndX - rStartX) * t;
-      let y = rStartY + (rEndY - rStartY) * t;
-      // Organic wiggles
-      const wig1 = Math.sin(t * Math.PI * 2.3 + 0.7) * 55 * (1 - t * 0.5);
-      const wig2 = Math.sin(t * Math.PI * 5.1 + 2.1) * 20 * (1 - t * 0.6);
-      const wig3 = Math.cos(t * Math.PI * 1.4) * 30 * (1 - t * 0.4);
-      x += wig1 * 0.6 + wig2 * 0.5;
-      y += wig3 * 0.5 + wig2 * 0.3;
-      // Width tapers from source to mouth
-      const width = 6 + t * 14;
-      riverPoints.push({ x, y, w: width });
-    }
-
-    // Draw river on mask as thick stroked path
     mctx.strokeStyle = '#ffffff';
     mctx.lineCap = 'round';
     mctx.lineJoin = 'round';
-    mctx.beginPath();
-    mctx.moveTo(riverPoints[0].x, riverPoints[0].y);
-    for (let i = 1; i < riverPoints.length; i++) {
-      const prev = riverPoints[i - 1];
-      const curr = riverPoints[i];
-      const mx = (prev.x + curr.x) / 2;
-      const my = (prev.y + curr.y) / 2;
-      mctx.quadraticCurveTo(prev.x, prev.y, mx, my);
-    }
-    mctx.quadraticCurveTo(
-      riverPoints[riverPoints.length - 2].x,
-      riverPoints[riverPoints.length - 2].y,
-      riverPoints[riverPoints.length - 1].x,
-      riverPoints[riverPoints.length - 1].y
-    );
-    mctx.lineWidth = 18;
-    mctx.stroke();
 
-    // Save mask
+    // --- MULTIPLE LAKES (organic blobs) ---
+    const lakes = [];
+    const numLakes = 3 + Math.floor(Math.random() * 2); // 3–4 lakes
+    for (let lI = 0; lI < numLakes; lI++) {
+      const radiusBase = Math.min(worldWidth, worldHeight) * (0.10 + Math.random() * 0.10);
+      // Position lakes away from edges, but roughly scattered
+      let cx, cy, tries = 0;
+      do {
+        cx = worldWidth * (0.15 + Math.random() * 0.7);
+        cy = worldHeight * (0.35 + Math.random() * 0.55);
+        tries++;
+      } while (tries < 30 && lakes.some(L =>
+        Math.hypot(cx - L.cx, cy - L.cy) < (radiusBase + L.radius) * 1.3
+      ));
+
+      const numPts = 12;
+      const pts = [];
+      for (let i = 0; i < numPts; i++) {
+        const ang = (i / numPts) * Math.PI * 2;
+        const rVar = radiusBase * (0.7 + 0.4 * Math.sin(ang * 3 + Math.random() * 6) + 0.15 * Math.sin(ang * 7));
+        pts.push({
+          x: cx + Math.cos(ang) * rVar,
+          y: cy + Math.sin(ang) * rVar * 0.78
+        });
+      }
+
+      // Draw lake on mask
+      mctx.beginPath();
+      for (let i = 0; i < pts.length; i++) {
+        const p0 = pts[(i - 1 + pts.length) % pts.length];
+        const p1 = pts[i];
+        const p2 = pts[(i + 1) % pts.length];
+        const p3 = pts[(i + 2) % pts.length];
+        if (i === 0) mctx.moveTo(p1.x, p1.y);
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        mctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      }
+      mctx.closePath();
+      mctx.fill();
+
+      lakes.push({ cx, cy, radius: radiusBase, pts });
+    }
+    terrain.features.lakes = lakes;
+
+    // --- River (connects some lakes) ---
+    const riverPoints = [];
+    if (lakes.length >= 2) {
+      // Start at a random point top-left, end at a random lake
+      const startX = worldWidth * 0.04;
+      const startY = worldHeight * 0.10;
+      const endLake = lakes[Math.floor(Math.random() * lakes.length)];
+      const endX = endLake.cx - endLake.radius * 0.3;
+      const endY = endLake.cy - endLake.radius * 0.3;
+
+      const rSteps = 22;
+      for (let i = 0; i <= rSteps; i++) {
+        const t = i / rSteps;
+        let x = startX + (endX - startX) * t;
+        let y = startY + (endY - startY) * t;
+        const wig1 = Math.sin(t * Math.PI * 2.3 + 0.7) * 50 * (1 - t * 0.5);
+        const wig2 = Math.sin(t * Math.PI * 5.1 + 2.1) * 18 * (1 - t * 0.6);
+        const wig3 = Math.cos(t * Math.PI * 1.4) * 28 * (1 - t * 0.4);
+        x += wig1 * 0.6 + wig2 * 0.5;
+        y += wig3 * 0.5 + wig2 * 0.3;
+        riverPoints.push({ x, y });
+      }
+
+      // Draw river on mask as thick stroked path
+      mctx.beginPath();
+      mctx.moveTo(riverPoints[0].x, riverPoints[0].y);
+      for (let i = 1; i < riverPoints.length; i++) {
+        const prev = riverPoints[i - 1];
+        const curr = riverPoints[i];
+        const mx = (prev.x + curr.x) / 2;
+        const my = (prev.y + curr.y) / 2;
+        mctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+      }
+      mctx.quadraticCurveTo(
+        riverPoints[riverPoints.length - 2].x,
+        riverPoints[riverPoints.length - 2].y,
+        riverPoints[riverPoints.length - 1].x,
+        riverPoints[riverPoints.length - 1].y
+      );
+      mctx.lineWidth = 16;
+      mctx.stroke();
+    }
+    terrain.features.river = riverPoints;
+
     terrain.waterMask = mask;
     terrain.waterCtx = mctx;
 
-    // --- Mountains (organic, multi-peak) ---
-    const mountains = [];
-    const numMountainRanges = 3;
-    for (let rI = 0; rI < numMountainRanges; rI++) {
-      const baseCenterX = worldWidth * (0.12 + 0.55 * (rI / (numMountainRanges - 1)));
-      const baseY = 90 + rI * 8;
-      const rangeWidth = 120 + Math.random() * 80;
-      const peakHeight = 55 + Math.random() * 45;
-      // Build a jagged mountain silhouette
-      const pts = [];
-      const numPeaks = 3 + Math.floor(Math.random() * 3);
-      pts.push({ x: baseCenterX - rangeWidth / 2, y: baseY });
-      for (let pI = 0; pI < numPeaks; pI++) {
-        const px = baseCenterX - rangeWidth / 2 + (rangeWidth) * ((pI + 0.5) / numPeaks);
-        const ph = peakHeight * (0.6 + Math.random() * 0.6);
-        pts.push({ x: px, y: baseY - ph });
-        // Valley between peaks
-        if (pI < numPeaks - 1) {
-          const vx = baseCenterX - rangeWidth / 2 + (rangeWidth) * ((pI + 1) / numPeaks);
-          pts.push({ x: vx, y: baseY - ph * 0.35 });
-        }
-      }
-      pts.push({ x: baseCenterX + rangeWidth / 2, y: baseY });
-      mountains.push({ points: pts, baseY, snow: Math.random() > 0.4 });
-    }
-    terrain.features.mountains = mountains;
-
-    // --- Trees: scattered on land only ---
+    // --- BIGGER Trees ---
     const trees = [];
     let attempts = 0;
-    while (trees.length < 45 && attempts < 400) {
+    while (trees.length < 40 && attempts < 500) {
       attempts++;
       const x = Math.random() * worldWidth;
       const y = Math.random() * worldHeight;
       if (isWater(x, y)) continue;
-      // Keep trees out of the mountain strip (top area)
-      if (y < 100) continue;
-      // Don't overcrowd
+      if (y < 70) continue;   // avoid top strip
       let tooClose = false;
       for (let t of trees) {
-        if (Math.hypot(x - t.x, y - t.y) < 22) { tooClose = true; break; }
+        if (Math.hypot(x - t.x, y - t.y) < 35) { tooClose = true; break; }
       }
       if (tooClose) continue;
       trees.push({
         x, y,
-        size: 7 + Math.random() * 8,
-        type: Math.random() > 0.35 ? 'pine' : 'round',
+        size: 16 + Math.random() * 14,     // BIGGER
+        type: Math.random() > 0.4 ? 'pine' : 'round',
         color: Math.random() > 0.5 ? '#3a7a3a' : '#2f6a2f',
-        trunkH: 5 + Math.random() * 4
+        trunkH: 8 + Math.random() * 8
       });
     }
     terrain.features.trees = trees;
 
-    // --- Rocks: small grey boulders on land ---
-    const rocks = [];
-    for (let i = 0; i < 18; i++) {
+    // --- BIGGER Shrubs (bushes) ---
+    const shrubs = [];
+    for (let i = 0; i < 30; i++) {
       const x = Math.random() * worldWidth;
       const y = Math.random() * worldHeight;
       if (isWater(x, y)) continue;
-      if (y < 100) continue;
+      if (y < 70) continue;
+      shrubs.push({
+        x, y,
+        size: 8 + Math.random() * 8,      // BIGGER
+        color: Math.random() > 0.5 ? '#4a8a3a' : '#5a9a4a'
+      });
+    }
+    terrain.features.shrubs = shrubs;
+
+    // --- BIGGER Rocks ---
+    const rocks = [];
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * worldWidth;
+      const y = Math.random() * worldHeight;
+      if (isWater(x, y)) continue;
+      if (y < 70) continue;
       rocks.push({
         x, y,
-        rx: 3 + Math.random() * 5,
-        ry: 2 + Math.random() * 3,
+        rx: 6 + Math.random() * 9,        // BIGGER
+        ry: 4 + Math.random() * 6,
         rot: Math.random() * Math.PI
       });
     }
     terrain.features.rocks = rocks;
 
-    // --- Flowers: tiny colorful dots on land ---
+    // --- Flowers ---
     const flowers = [];
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < 45; i++) {
       const x = Math.random() * worldWidth;
       const y = Math.random() * worldHeight;
       if (isWater(x, y)) continue;
-      if (y < 100) continue;
+      if (y < 70) continue;
       flowers.push({
         x, y,
         color: ['#e8a0b8', '#f0d060', '#d0a0e0', '#ffffff'][Math.floor(Math.random() * 4)],
-        size: 1.5 + Math.random() * 1.5
+        size: 2 + Math.random() * 2
       });
     }
     terrain.features.flowers = flowers;
@@ -649,9 +647,9 @@
     drawWorld();
   }
 
-  // ---------- natural terrain drawing ----------
+  // ---------- draw natural terrain ----------
   function drawTerrain() {
-    // 1. Base grass gradient (varied tones)
+    // Base grass gradient
     const grad = ctx.createLinearGradient(0, 0, 0, worldHeight);
     grad.addColorStop(0, '#e6f0c0');
     grad.addColorStop(0.35, '#d8e8a8');
@@ -660,73 +658,26 @@
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
-    // Add subtle noise patches for natural variation
+    // Subtle noise patches
     ctx.save();
     for (let i = 0; i < 60; i++) {
-      // deterministic pseudo-random based on i
       const seedX = (Math.sin(i * 12.9898) * 43758.5453) % 1;
       const seedY = (Math.sin(i * 78.233) * 43758.5453) % 1;
       const x = Math.abs(seedX) * worldWidth;
       const y = Math.abs(seedY) * worldHeight;
-      const rx = 30 + (Math.abs(seedX) * 60);
-      const ry = 20 + (Math.abs(seedY) * 40);
+      const rx = 40 + (Math.abs(seedX) * 70);
+      const ry = 30 + (Math.abs(seedY) * 50);
       ctx.beginPath();
       ctx.ellipse(x, y, rx, ry, 0, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(160, 200, 100, 0.12)';
+      ctx.fillStyle = 'rgba(160, 200, 100, 0.10)';
       ctx.fill();
     }
     ctx.restore();
 
-    // 2. Mountains with gradient shading
-    for (let m of terrain.features.mountains) {
-      const pts = m.points;
-      if (pts.length < 3) continue;
-
-      // Mountain body gradient (brown-grey)
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i].x, pts[i].y);
-      }
-      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-      ctx.closePath();
-
-      const minX = Math.min(...pts.map(p => p.x));
-      const maxX = Math.max(...pts.map(p => p.x));
-      const maxY = m.baseY;
-      const minY = Math.min(...pts.map(p => p.y));
-      const mg = ctx.createLinearGradient(0, minY, 0, maxY);
-      mg.addColorStop(0, '#b0a080');
-      mg.addColorStop(0.5, '#95836a');
-      mg.addColorStop(1, '#6e5c46');
-      ctx.fillStyle = mg;
-      ctx.fill();
-
-      // Snow caps: small white patches on the highest peaks
-      if (m.snow) {
-        for (let i = 1; i < pts.length - 1; i++) {
-          const p = pts[i];
-          const prev = pts[i - 1];
-          const next = pts[i + 1];
-          // Peak if higher than both neighbors
-          if (p.y < prev.y && p.y < next.y) {
-            const snowSize = 8 + Math.random() * 4;
-            ctx.beginPath();
-            ctx.moveTo(p.x - snowSize, p.y + snowSize * 0.7);
-            ctx.lineTo(p.x, p.y - 2);
-            ctx.lineTo(p.x + snowSize, p.y + snowSize * 0.7);
-            ctx.closePath();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fill();
-          }
-        }
-      }
-    }
-
-    // 3. Draw river (natural gradient from source to lake)
-    if (terrain.features.river && terrain.features.river.length > 1) {
-      const rp = terrain.features.river;
-      // Outer bank (darker)
+    // River
+    const rp = terrain.features.river;
+    if (rp && rp.length > 1) {
+      // Outer bank
       ctx.beginPath();
       ctx.moveTo(rp[0].x, rp[0].y);
       for (let i = 1; i < rp.length; i++) {
@@ -743,7 +694,7 @@
       ctx.lineJoin = 'round';
       ctx.stroke();
 
-      // Water (lighter gradient)
+      // Water
       ctx.beginPath();
       ctx.moveTo(rp[0].x, rp[0].y);
       for (let i = 1; i < rp.length; i++) {
@@ -761,81 +712,76 @@
       ctx.lineWidth = 15;
       ctx.stroke();
 
-      // Highlights
-      ctx.beginPath();
-      ctx.moveTo(rp[0].x, rp[0].y);
-      for (let i = 1; i < rp.length; i++) {
-        const prev = rp[i - 1];
-        const curr = rp[i];
-        const mx = (prev.x + curr.x) / 2;
-        const my = (prev.y + curr.y) / 2;
-        ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
-      }
-      ctx.quadraticCurveTo(rp[rp.length - 2].x, rp[rp.length - 2].y, rp[rp.length - 1].x, rp[rp.length - 1].y);
+      // Highlight
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
       ctx.lineWidth = 4;
       ctx.stroke();
     }
 
-    // 4. Draw lake (organic shape matching the mask)
-    const lakeCX = worldWidth * 0.76;
-    const lakeCY = worldHeight * 0.72;
-    const lakeRadius = Math.min(worldWidth, worldHeight) * 0.20;
-
-    // Rebuild the same lake points used in mask
-    const lakePoints = [];
-    const numLakePts = 14;
-    for (let i = 0; i < numLakePts; i++) {
-      const ang = (i / numLakePts) * Math.PI * 2;
-      const rVar = lakeRadius * (0.75 + 0.35 * Math.sin(ang * 3 + 1.2) + 0.15 * Math.sin(ang * 7 + 0.5));
-      lakePoints.push({
-        x: lakeCX + Math.cos(ang) * rVar,
-        y: lakeCY + Math.sin(ang) * rVar * 0.75
-      });
-    }
-
-    // Lake outer bank
-    ctx.beginPath();
-    for (let i = 0; i < lakePoints.length; i++) {
-      const p0 = lakePoints[(i - 1 + lakePoints.length) % lakePoints.length];
-      const p1 = lakePoints[i];
-      const p2 = lakePoints[(i + 1) % lakePoints.length];
-      const p3 = lakePoints[(i + 2) % lakePoints.length];
-      if (i === 0) ctx.moveTo(p1.x, p1.y);
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = '#5a8a9a';
-    ctx.fill();
-
-    // Lake water (radial gradient)
-    const lakeGrad = ctx.createRadialGradient(
-      lakeCX - lakeRadius * 0.2, lakeCY - lakeRadius * 0.2, 5,
-      lakeCX, lakeCY, lakeRadius * 1.2
-    );
-    lakeGrad.addColorStop(0, '#b8e0f0');
-    lakeGrad.addColorStop(0.6, '#7ab8d8');
-    lakeGrad.addColorStop(1, '#4a8aaa');
-    ctx.fillStyle = lakeGrad;
-    ctx.fill();
-
-    // Lake shimmer highlights
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 1.5;
-    for (let i = 0; i < 5; i++) {
-      const ang = (i / 5) * Math.PI * 2 + 0.3;
-      const r1 = lakeRadius * 0.3;
-      const r2 = lakeRadius * 0.6;
+    // Lakes (multiple)
+    for (let lake of terrain.features.lakes) {
+      const pts = lake.pts;
+      // Outer bank
       ctx.beginPath();
-      ctx.arc(lakeCX, lakeCY, r1 + i * 3, ang, ang + 0.8);
-      ctx.stroke();
+      for (let i = 0; i < pts.length; i++) {
+        const p0 = pts[(i - 1 + pts.length) % pts.length];
+        const p1 = pts[i];
+        const p2 = pts[(i + 1) % pts.length];
+        const p3 = pts[(i + 2) % pts.length];
+        if (i === 0) ctx.moveTo(p1.x, p1.y);
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#5a8a9a';
+      ctx.fill();
+
+      // Water gradient
+      const lakeGrad = ctx.createRadialGradient(
+        lake.cx - lake.radius * 0.2, lake.cy - lake.radius * 0.2, 5,
+        lake.cx, lake.cy, lake.radius * 1.2
+      );
+      lakeGrad.addColorStop(0, '#b8e0f0');
+      lakeGrad.addColorStop(0.6, '#7ab8d8');
+      lakeGrad.addColorStop(1, '#4a8aaa');
+      ctx.fillStyle = lakeGrad;
+      ctx.fill();
+
+      // Shimmer
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 4; i++) {
+        const ang = (i / 4) * Math.PI * 2 + 0.3;
+        ctx.beginPath();
+        ctx.arc(lake.cx, lake.cy, lake.radius * 0.3 + i * 4, ang, ang + 0.7);
+        ctx.stroke();
+      }
     }
 
-    // 5. Draw rocks
+    // Shrubs (bushes)
+    for (let sh of terrain.features.shrubs) {
+      ctx.fillStyle = sh.color;
+      // Cluster of small circles
+      ctx.beginPath();
+      ctx.arc(sh.x, sh.y, sh.size * 0.7, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(sh.x - sh.size * 0.5, sh.y + sh.size * 0.2, sh.size * 0.5, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(sh.x + sh.size * 0.5, sh.y + sh.size * 0.15, sh.size * 0.55, 0, 2 * Math.PI);
+      ctx.fill();
+      // Highlight
+      ctx.beginPath();
+      ctx.arc(sh.x - sh.size * 0.2, sh.y - sh.size * 0.25, sh.size * 0.25, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(180, 230, 150, 0.45)';
+      ctx.fill();
+    }
+
+    // Rocks (bigger)
     for (let rk of terrain.features.rocks) {
       ctx.save();
       ctx.translate(rk.x, rk.y);
@@ -845,17 +791,17 @@
       ctx.fillStyle = '#8a8378';
       ctx.fill();
       ctx.strokeStyle = '#5a5450';
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
       // Highlight
       ctx.beginPath();
       ctx.ellipse(-rk.rx * 0.3, -rk.ry * 0.3, rk.rx * 0.4, rk.ry * 0.4, 0, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(220, 215, 205, 0.5)';
+      ctx.fillStyle = 'rgba(220, 215, 205, 0.55)';
       ctx.fill();
       ctx.restore();
     }
 
-    // 6. Draw flowers (tiny dots of color)
+    // Flowers
     for (let fl of terrain.features.flowers) {
       ctx.beginPath();
       ctx.arc(fl.x, fl.y, fl.size, 0, 2 * Math.PI);
@@ -863,11 +809,11 @@
       ctx.fill();
     }
 
-    // 7. Draw trees (pine or round canopy)
+    // Trees (bigger, more visible)
     for (let t of terrain.features.trees) {
       // Trunk
       ctx.fillStyle = '#5a3a1a';
-      ctx.fillRect(t.x - 1.5, t.y, 3, t.trunkH);
+      ctx.fillRect(t.x - 2.5, t.y, 5, t.trunkH);
 
       if (t.type === 'pine') {
         // Pine: stacked triangles
@@ -875,31 +821,31 @@
         const baseY = t.y + t.trunkH;
         const layers = 3;
         for (let l = 0; l < layers; l++) {
-          const lw = t.size * (1 - l * 0.25);
-          const ly = baseY - l * (t.size * 0.5);
+          const lw = t.size * (1 - l * 0.22);
+          const ly = baseY - l * (t.size * 0.55);
           ctx.beginPath();
-          ctx.moveTo(t.x, ly - t.size * 0.9);
-          ctx.lineTo(t.x - lw, ly + t.size * 0.1);
-          ctx.lineTo(t.x + lw, ly + t.size * 0.1);
+          ctx.moveTo(t.x, ly - t.size * 1.0);
+          ctx.lineTo(t.x - lw, ly + t.size * 0.15);
+          ctx.lineTo(t.x + lw, ly + t.size * 0.15);
           ctx.closePath();
           ctx.fill();
         }
       } else {
-        // Round canopy: overlapping circles
+        // Round canopy
         ctx.fillStyle = t.color;
         const cy = t.y + t.trunkH - t.size * 0.4;
         ctx.beginPath();
-        ctx.arc(t.x, cy, t.size * 0.75, 0, 2 * Math.PI);
+        ctx.arc(t.x, cy, t.size * 0.85, 0, 2 * Math.PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(t.x - t.size * 0.4, cy + t.size * 0.2, t.size * 0.5, 0, 2 * Math.PI);
+        ctx.arc(t.x - t.size * 0.5, cy + t.size * 0.25, t.size * 0.55, 0, 2 * Math.PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(t.x + t.size * 0.4, cy + t.size * 0.2, t.size * 0.5, 0, 2 * Math.PI);
+        ctx.arc(t.x + t.size * 0.5, cy + t.size * 0.25, t.size * 0.55, 0, 2 * Math.PI);
         ctx.fill();
         // Highlight
         ctx.beginPath();
-        ctx.arc(t.x - t.size * 0.2, cy - t.size * 0.2, t.size * 0.3, 0, 2 * Math.PI);
+        ctx.arc(t.x - t.size * 0.25, cy - t.size * 0.25, t.size * 0.35, 0, 2 * Math.PI);
         ctx.fillStyle = 'rgba(160, 220, 140, 0.4)';
         ctx.fill();
       }
@@ -949,9 +895,8 @@
     return Math.min(MAX_VISIBLE, Math.max(0, Math.round(pop)));
   }
 
-  // ---------- spawn an agent ON LAND (never water) ----------
+  // ---------- spawn on land only ----------
   function spawnAgentOnLand(state) {
-    // Try up to 100 random locations to find a land point
     for (let attempt = 0; attempt < 100; attempt++) {
       const x = Math.random() * (worldWidth - 10) + 5;
       const y = Math.random() * (worldHeight - 10) + 5;
@@ -959,10 +904,9 @@
         return { x, y, state: state || 'normal' };
       }
     }
-    // Fallback: return a point in the top-left corner (usually land)
     return {
-      x: worldWidth * 0.1,
-      y: worldHeight * 0.3,
+      x: worldWidth * 0.5,
+      y: worldHeight * 0.5,
       state: state || 'normal'
     };
   }
@@ -1026,12 +970,8 @@
     totalBirths += births;
     totalDeaths += deaths;
 
-    if (timeToHalfK === null && population >= K / 2) {
-      timeToHalfK = currentTime;
-    }
-    if (timeToNinetyK === null && population >= 0.9 * K) {
-      timeToNinetyK = currentTime;
-    }
+    if (timeToHalfK === null && population >= K / 2) timeToHalfK = currentTime;
+    if (timeToNinetyK === null && population >= 0.9 * K) timeToNinetyK = currentTime;
 
     currentGrowthRate = births - deaths;
     currentPerCapita = N > 0 ? currentGrowthRate / N : 0;
