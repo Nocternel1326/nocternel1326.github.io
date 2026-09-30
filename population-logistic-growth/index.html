@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logistic Growth · single population</title>
+  <title>Logistic Growth · Real Population Simulation</title>
   <!-- Chart.js for the three plots -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -22,15 +22,15 @@
       padding: 1.5rem;
     }
 
-    /* main panel – dark UI */
+    /* main panel – slightly darker yellow */
     .netlogo-panel {
-      background: #2e353d;
+      background: #f5eec8;
       border-radius: 1.5rem;
       padding: 1.5rem 2rem 1.8rem 2rem;
       max-width: 1400px;
       width: fit-content;
-      box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.7);
-      border: 1px solid #47515c;
+      box-shadow: 0 20px 30px -10px rgba(120, 100, 40, 0.5);
+      border: 2px solid #d4c48a;
     }
 
     .header {
@@ -38,7 +38,7 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 0.75rem;
-      color: #e3e9f0;
+      color: #3a3020;
     }
 
     .title-section {
@@ -49,39 +49,41 @@
 
     .title-section h1 {
       font-size: 1.5rem;
-      font-weight: 500;
+      font-weight: 600;
       margin: 0;
-      color: #f0f5fa;
+      color: #3a3020;
       letter-spacing: 0.2px;
     }
 
-    /* speed slider row – now enabled */
+    /* speed slider row */
     .speed-row {
       display: flex;
       align-items: center;
       gap: 1rem;
       margin: 0.5rem 0 1.2rem 0;
-      color: #cbd5e1;
+      color: #4a3f28;
       font-size: 0.9rem;
+      font-weight: 500;
     }
 
     .speed-row input {
       flex: 1;
-      height: 6px;
+      height: 8px;
       -webkit-appearance: none;
-      background: #3e4b57;
+      background: #d4c48a;
       border-radius: 10px;
       cursor: pointer;
+      border: 1px solid #b8a86a;
     }
 
     .speed-row input::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      background: #4a8bb9;
+      width: 20px;
+      height: 20px;
+      background: #8a7a4a;
       border-radius: 50%;
-      border: 2px solid white;
-      box-shadow: 0 2px 6px black;
+      border: 2px solid #fff8d8;
+      box-shadow: 0 2px 6px rgba(80, 60, 20, 0.5);
       cursor: pointer;
     }
 
@@ -94,13 +96,13 @@
       justify-content: center;
     }
 
-    /* Light yellow world background with dots */
+    /* Light yellow world background */
     .world-container {
       background: #fdf8e0;
       border-radius: 12px;
       padding: 6px;
-      box-shadow: inset 0 0 12px #d4cba6, 0 8px 12px rgba(0,0,0,0.6);
-      border: 1px solid #b8a87a;
+      box-shadow: inset 0 0 12px #d4cba6, 0 8px 12px rgba(120, 100, 40, 0.4);
+      border: 2px solid #c8b87a;
     }
 
     .world-canvas {
@@ -112,30 +114,31 @@
     }
 
     .tick-label {
-      margin-top: 6px;
+      margin-top: 8px;
       font-family: 'SF Mono', monospace;
       font-size: 0.85rem;
-      color: #aab8c5;
+      color: #5a4a2a;
       padding-left: 6px;
+      font-weight: 600;
     }
 
     /* right side parameters */
     .params-panel {
-      background: #2b333b;
+      background: #efe6c0;
       border-radius: 12px;
       padding: 1rem 1.5rem 1.2rem 1.5rem;
-      box-shadow: inset 0 1px 3px #3f4b55, 0 6px 10px #0f1215;
-      border: 1px solid #505e6b;
-      min-width: 280px;
-      color: #dfe7ef;
+      box-shadow: inset 0 1px 3px #fff8e0, 0 6px 10px rgba(120, 100, 40, 0.3);
+      border: 2px solid #d4c48a;
+      min-width: 300px;
+      color: #3a3020;
     }
 
     .params-panel h2 {
       font-size: 1.2rem;
-      font-weight: 500;
+      font-weight: 600;
       text-align: center;
       margin: 0 0 0.75rem 0;
-      color: #ced9e3;
+      color: #3a3020;
       letter-spacing: 0.5px;
     }
 
@@ -155,70 +158,80 @@
       display: flex;
       justify-content: space-between;
       font-size: 0.85rem;
-      font-weight: 500;
-      color: #b6c6d6;
+      font-weight: 600;
+      color: #4a3f28;
     }
 
     .slider-item .label-row span:last-child {
       font-family: 'SF Mono', monospace;
-      background: #1e2a33;
+      background: #fff8e0;
       padding: 0.1rem 0.6rem;
       border-radius: 30px;
       font-size: 0.8rem;
-      border: 1px solid #3d4e5d;
+      border: 1px solid #c8b87a;
+      color: #3a3020;
     }
 
     .slider-item input[type=range] {
       width: 100%;
-      height: 5px;
+      height: 6px;
       -webkit-appearance: none;
-      background: #1e2a33;
+      background: #d4c48a;
       border-radius: 10px;
       margin: 5px 0 2px;
-      border: 1px solid #374854;
+      border: 1px solid #b8a86a;
     }
 
     .slider-item input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      background: #3d8ec9;
+      width: 18px;
+      height: 18px;
+      background: #8a7a4a;
       border-radius: 50%;
-      border: 2px solid #f0f7ff;
-      box-shadow: 0 1px 5px black;
+      border: 2px solid #fff8d8;
+      box-shadow: 0 1px 5px rgba(80, 60, 20, 0.5);
       cursor: pointer;
     }
 
     /* births/deaths row */
     .birth-death-row {
       display: flex;
-      gap: 0.6rem;
-      margin-top: 0.8rem;
+      gap: 0.8rem;
+      margin-top: 1rem;
       justify-content: center;
     }
 
     .bd-box {
-      background: #d8e6b0;
-      border-radius: 6px;
-      padding: 0.2rem 0.6rem;
+      background: #fff8e0;
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
       text-align: center;
-      border: 1px solid #b0c48c;
-      box-shadow: inset 0 1px 4px #f5ffe0, 0 2px 3px black;
-      min-width: 65px;
+      border: 2px solid #c8b87a;
+      box-shadow: inset 0 1px 4px #ffffff, 0 2px 3px rgba(120, 100, 40, 0.2);
+      min-width: 80px;
     }
 
     .bd-box .bd-label {
       font-size: 0.7rem;
-      font-weight: 600;
-      color: #3a4d1e;
+      font-weight: 700;
+      color: #5a4a2a;
       letter-spacing: 0.3px;
+      text-transform: uppercase;
     }
 
     .bd-box .bd-value {
       font-family: 'SF Mono', monospace;
       font-weight: 700;
-      font-size: 1rem;
-      color: #1e3300;
+      font-size: 1.2rem;
+      color: #3a3020;
+    }
+
+    .bd-box.births .bd-value {
+      color: #1a7a1a;
+    }
+
+    .bd-box.deaths .bd-value {
+      color: #b02020;
     }
 
     /* buttons */
@@ -230,36 +243,36 @@
     }
 
     .btn {
-      background: #4c6b8a;
+      background: #8a7a4a;
       border: none;
-      color: white;
-      font-weight: 600;
-      font-size: 0.9rem;
-      padding: 0.5rem 1.2rem;
+      color: #fff8e0;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.6rem 1.5rem;
       border-radius: 20px;
-      letter-spacing: 0.3px;
-      box-shadow: 0 4px 0 #1e2d3a, 0 5px 12px black;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 0 #5a4a2a, 0 5px 12px rgba(80, 60, 20, 0.4);
       cursor: pointer;
       transition: all 0.08s ease;
-      border: 1px solid #6b8fb0;
+      border: 1px solid #a89a5a;
     }
 
     .btn:active {
       transform: translateY(3px);
-      box-shadow: 0 1px 0 #1e2d3a, 0 5px 12px black;
+      box-shadow: 0 1px 0 #5a4a2a, 0 5px 12px rgba(80, 60, 20, 0.4);
     }
 
     .btn-setup {
-      background: #5f7e9c;
+      background: #a89a5a;
     }
 
     .btn-go {
-      background: #3d7ea6;
+      background: #5a8a4a;
     }
 
     .btn-go.running {
-      background: #b33a3a;
-      border-color: #d46b6b;
+      background: #b04040;
+      border-color: #d06060;
     }
 
     /* three charts row */
@@ -272,11 +285,11 @@
     }
 
     .chart-card {
-      background: #f5f9fe;
+      background: #fffdf0;
       border-radius: 10px;
       padding: 0.8rem 0.8rem 0.3rem 0.8rem;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.6);
-      border: 1px solid #b8c9da;
+      box-shadow: 0 6px 12px rgba(120, 100, 40, 0.3);
+      border: 2px solid #d4c48a;
       flex: 1 1 240px;
       max-width: 280px;
     }
@@ -285,14 +298,14 @@
       display: flex;
       justify-content: space-between;
       font-size: 0.9rem;
-      font-weight: 600;
-      color: #1a2b3c;
+      font-weight: 700;
+      color: #3a3020;
       margin-bottom: 0.2rem;
       padding: 0 0.2rem;
     }
 
     .chart-card .chart-title span:last-child {
-      color: #718096;
+      color: #8a7a4a;
       font-weight: 400;
     }
 
@@ -308,13 +321,13 @@
   <!-- header -->
   <div class="header">
     <div class="title-section">
-      <h1>Logistic Growth</h1>
+      <h1>🌿 Logistic Growth · Real Population Simulation</h1>
     </div>
   </div>
 
-  <!-- speed slider – now functional -->
+  <!-- speed slider -->
   <div class="speed-row">
-    <span style="min-width:40px;">speed</span>
+    <span style="min-width:50px;">Speed</span>
     <input type="range" id="speedSlider" min="1" max="20" value="8" step="1">
     <span id="speedValue" style="min-width: 45px; font-family: monospace;">8</span>
   </div>
@@ -326,7 +339,7 @@
       <div class="world-container">
         <canvas id="worldCanvas" class="world-canvas" width="500" height="300"></canvas>
       </div>
-      <div class="tick-label" id="tickDisplay">ticks: 0</div>
+      <div class="tick-label" id="tickDisplay">t = 0.00  |  N = 10</div>
     </div>
 
     <!-- right: parameters panel -->
@@ -335,21 +348,21 @@
       <div class="param-group">
         <div class="slider-item">
           <div class="label-row">
-            <span>N-Zero</span>
+            <span>Initial Population (N₀)</span>
             <span id="n0ValDisplay">10</span>
           </div>
           <input type="range" id="n0Slider" min="1" max="300" value="10" step="1">
         </div>
         <div class="slider-item">
           <div class="label-row">
-            <span>r</span>
+            <span>Growth Rate (r)</span>
             <span id="rValDisplay">1.20</span>
           </div>
           <input type="range" id="rSlider" min="0.1" max="1.5" value="1.2" step="0.01">
         </div>
         <div class="slider-item">
           <div class="label-row">
-            <span>K</span>
+            <span>Carrying Capacity (K)</span>
             <span id="kValDisplay">600</span>
           </div>
           <input type="range" id="kSlider" min="100" max="1000" value="600" step="10">
@@ -358,11 +371,11 @@
 
       <!-- Births / Deaths per tick -->
       <div class="birth-death-row">
-        <div class="bd-box">
+        <div class="bd-box births">
           <div class="bd-label">Births/tick</div>
           <div class="bd-value" id="birthsDisplay">0</div>
         </div>
-        <div class="bd-box">
+        <div class="bd-box deaths">
           <div class="bd-label">Deaths/tick</div>
           <div class="bd-value" id="deathsDisplay">0</div>
         </div>
@@ -410,8 +423,8 @@
     let K = 600;
 
     // ---- speed control ----
-    let speedFactor = 8;          // 1..20, controls how fast time advances
-    const BASE_SPEED = 0.02;      // base time increment per frame
+    let speedFactor = 8;
+    const BASE_SPEED = 0.015;
 
     // ---- animation state ----
     let currentTime = 0;
@@ -425,16 +438,13 @@
     let fullTimes = [];
     let fullPops = [];
 
-    // previous population (for tracking births/deaths per tick)
-    let prevPop = 0;
-
     // ---- world canvas ----
     const canvas = document.getElementById('worldCanvas');
     const ctx = canvas.getContext('2d');
     const worldWidth = 500, worldHeight = 300;
 
     // Agent representation: each agent has {x, y, state, age}
-    // state: 'normal' (black), 'born' (green), 'dying' (red X, will be removed next tick)
+    // state: 'normal' (black), 'born' (green), 'dying' (red X)
     let agents = [];
 
     // ---- logistic curve (RK4) ----
@@ -480,21 +490,85 @@
       return p0 + frac * (p1 - p0);
     }
 
-    // ---- synchronize agents with target population, marking births/deaths ----
+    // ---- synchronize agents with target population ----
+    // Returns {births, deaths} — the actual number of agents added/removed
     function syncAgents(targetPop) {
-      // Convert to integer number of dots to display (scaled for visibility)
+      // Scale population to number of visible dots
       const maxDots = 350;
       const targetDots = Math.min(maxDots, Math.round((targetPop / Math.max(K, 1)) * maxDots));
       const currentDots = agents.length;
 
-      // Track births and deaths for the display
       let birthsThisTick = 0;
       let deathsThisTick = 0;
 
-      if (targetDots > currentDots) {
-        // BIRTHS: add new agents with 'born' state
-        birthsThisTick = targetDots - currentDots;
-        for (let i = 0; i < birthsThisTick; i++) {
+      // ---- DEATHS: remove agents ----
+      if (targetDots < currentDots) {
+        const deathsNeeded = currentDots - targetDots;
+        // First, clear out any 'dying' agents from previous tick (they're dead now)
+        const stillAlive = agents.filter(a => a.state !== 'dying');
+        const dyingCount = agents.length - stillAlive.length;
+        agents = stillAlive;
+
+        // Mark additional agents as dying (including possibly some newborns)
+        const remainingDeaths = Math.max(0, deathsNeeded - dyingCount);
+        deathsThisTick = Math.min(remainingDeaths, agents.length);
+
+        // Pick random agents to mark as dying
+        const indices = agents.map((_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        for (let i = 0; i < deathsThisTick; i++) {
+          agents[indices[i]].state = 'dying';
+        }
+
+        // Remove the ones that died *this* tick (keep them for one frame to show the X)
+        // Actually, we keep dying agents for this frame, and they'll be removed next tick.
+        // To make the removal happen now, we need to remove the ones that were already dying
+        // from before. The logic above handles that.
+        // But we also need to account for the deaths from previous tick that were already marked.
+        // Let's simplify: 
+        // 1. Remove all agents with state 'dying' (they died last tick, now gone)
+        // 2. Mark new agents as 'dying' for the current tick
+        // 3. Show both normal and newly-dying agents
+        // But that means the number of visible agents will be targetDots + deathsThisTick
+        // which is okay — the dying ones are still shown with X.
+
+        // Recompute: after removing old dying agents, we have some number of normal agents.
+        // We want targetDots normal agents (alive) plus deathsThisTick dying agents.
+        // So the total number of agents (alive + dying) should be targetDots + deathsThisTick.
+        // Let's redo the counting to be precise.
+      }
+
+      // Let's use a cleaner approach:
+      // 1. Remove all 'dying' agents from the previous tick (they're gone now).
+      // 2. Count how many 'normal' agents we have (alive).
+      // 3. If we need more dots (targetDots > aliveCount), create new 'born' agents.
+      // 4. If we need fewer dots (targetDots < aliveCount), mark (aliveCount - targetDots) agents as 'dying'.
+      // 5. The world shows: normal agents + born agents (green) + dying agents (red X).
+      // 6. At the start of the next tick, dying agents are removed.
+
+      // This way, births and deaths are visible each tick.
+
+      // ---- Step 1: remove agents that died in the previous tick ----
+      const beforeRemoval = agents.length;
+      agents = agents.filter(a => a.state !== 'dying');
+      const removedFromPrev = beforeRemoval - agents.length;
+
+      // ---- Step 2: count current alive agents (normal + born from last tick become normal) ----
+      // Promote 'born' to 'normal' (they survived their birth tick)
+      for (let a of agents) {
+        if (a.state === 'born') a.state = 'normal';
+      }
+
+      const aliveCount = agents.length;
+
+      // ---- Step 3: handle births ----
+      let births = 0;
+      if (targetDots > aliveCount) {
+        births = targetDots - aliveCount;
+        for (let i = 0; i < births; i++) {
           agents.push({
             x: Math.random() * (worldWidth - 8) + 4,
             y: Math.random() * (worldHeight - 8) + 4,
@@ -502,26 +576,28 @@
             age: 0
           });
         }
-      } else if (targetDots < currentDots) {
-        // DEATHS: mark some existing agents as 'dying'
-        deathsThisTick = currentDots - targetDots;
-        // Pick the oldest normal agents to mark as dying (more realistic)
+      }
+
+      // ---- Step 4: handle deaths ----
+      let deaths = 0;
+      if (targetDots < aliveCount) {
+        deaths = aliveCount - targetDots;
+        // Mark random normal agents as dying
         const normalIndices = agents
           .map((a, i) => a.state === 'normal' ? i : -1)
           .filter(i => i !== -1);
-        // Shuffle for randomness
+        // Shuffle
         for (let i = normalIndices.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [normalIndices[i], normalIndices[j]] = [normalIndices[j], normalIndices[i]];
         }
-        const toMark = Math.min(deathsThisTick, normalIndices.length);
+        const toMark = Math.min(deaths, normalIndices.length);
         for (let i = 0; i < toMark; i++) {
-          const idx = normalIndices[i];
-          agents[idx].state = 'dying';
+          agents[normalIndices[i]].state = 'dying';
         }
-        // If we couldn't mark enough (all were already born/dying), mark any
-        if (toMark < deathsThisTick) {
-          let remaining = deathsThisTick - toMark;
+        // If we couldn't mark enough (all were already dying or born), mark any remaining
+        if (toMark < deaths) {
+          let remaining = deaths - toMark;
           for (let i = 0; i < agents.length && remaining > 0; i++) {
             if (agents[i].state === 'normal') {
               agents[i].state = 'dying';
@@ -531,21 +607,22 @@
         }
       }
 
-      return { birthsThisTick, deathsThisTick };
+      // ---- Return the counts for this tick ----
+      return { births: births, deaths: deaths };
     }
 
-    // ---- draw world with agent states ----
+    // ---- draw world ----
     function drawWorld() {
       // Clear with light yellow
       ctx.fillStyle = '#fdf8e0';
       ctx.fillRect(0, 0, worldWidth, worldHeight);
 
-      // Draw each agent based on state
+      // Draw agents
       for (let a of agents) {
         if (a.state === 'dying') {
-          // Draw a red X for dying agents
+          // Red X for dying agents
           ctx.strokeStyle = '#cc2222';
-          ctx.lineWidth = 2.2;
+          ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.moveTo(a.x - 4, a.y - 4);
           ctx.lineTo(a.x + 4, a.y + 4);
@@ -553,10 +630,10 @@
           ctx.lineTo(a.x - 4, a.y + 4);
           ctx.stroke();
         } else if (a.state === 'born') {
-          // Draw a green dot for newborns
+          // Green dot for newborns
           ctx.fillStyle = '#22aa22';
           ctx.beginPath();
-          ctx.arc(a.x, a.y, 2.8, 0, 2 * Math.PI);
+          ctx.arc(a.x, a.y, 3.0, 0, 2 * Math.PI);
           ctx.fill();
         } else {
           // Normal black dot
@@ -568,11 +645,11 @@
       }
     }
 
-    // ---- called each animation frame ----
+    // ---- step simulation ----
     function stepSimulation() {
       if (!isRunning) return;
 
-      // Advance time based on speed slider
+      // Advance time
       const timeIncrement = BASE_SPEED * speedFactor;
       currentTime += timeIncrement;
 
@@ -583,31 +660,28 @@
         document.getElementById('goBtn').textContent = 'Go';
       }
 
-      // Get target population at current time
+      // Get target population
       const targetPop = getPopulationAtTime(currentTime);
 
-      // Sync agents and get birth/death counts
-      const { birthsThisTick, deathsThisTick } = syncAgents(targetPop);
+      // Sync agents (returns births and deaths)
+      const { births, deaths } = syncAgents(targetPop);
 
       // Update display
       drawWorld();
       document.getElementById('tickDisplay').textContent =
         `t = ${currentTime.toFixed(2)}  |  N = ${Math.round(targetPop)}`;
-      document.getElementById('birthsDisplay').textContent = birthsThisTick;
-      document.getElementById('deathsDisplay').textContent = deathsThisTick;
+      document.getElementById('birthsDisplay').textContent = births;
+      document.getElementById('deathsDisplay').textContent = deaths;
 
-      // Continue animation
       if (isRunning) {
         animationFrame = requestAnimationFrame(stepSimulation);
       } else {
-        // One final render
         drawWorld();
       }
     }
 
-    // ---- reset everything ----
+    // ---- reset simulation ----
     function resetSimulation() {
-      // Stop animation
       isRunning = false;
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
@@ -616,7 +690,6 @@
       document.getElementById('goBtn').classList.remove('running');
       document.getElementById('goBtn').textContent = 'Go';
 
-      // Reset time
       currentTime = 0;
 
       // Recompute curve
@@ -624,7 +697,7 @@
       fullTimes = times;
       fullPops = pops;
 
-      // Initialize agents from N0 at t=0
+      // Initialize agents from N0
       const initialPop = getPopulationAtTime(0);
       const maxDots = 350;
       const initialDots = Math.min(maxDots, Math.round((initialPop / Math.max(K, 1)) * maxDots));
@@ -638,17 +711,12 @@
         });
       }
 
-      // Reset previous population
-      prevPop = initialPop;
-
-      // Update displays
       drawWorld();
       document.getElementById('tickDisplay').textContent =
         `t = 0.00  |  N = ${Math.round(initialPop)}`;
       document.getElementById('birthsDisplay').textContent = '0';
       document.getElementById('deathsDisplay').textContent = '0';
 
-      // Update charts
       updateCharts();
     }
 
@@ -671,11 +739,6 @@
         isRunning = true;
         goBtn.classList.add('running');
         goBtn.textContent = 'Pause';
-        // Clear the dying markers from previous step
-        for (let a of agents) {
-          if (a.state === 'dying') a.state = 'normal';
-          if (a.state === 'born') a.state = 'normal';
-        }
         stepSimulation();
       }
     }
@@ -688,14 +751,12 @@
       fullTimes = times;
       fullPops = pops;
 
-      // Population Size vs Time
       chartSize.data.labels = times.map(t => t.toFixed(2));
       chartSize.data.datasets[0].data = pops;
       const maxPop = Math.max(K * 1.15, ...pops);
       chartSize.options.scales.y.max = Math.ceil(maxPop / 100) * 100;
       chartSize.update();
 
-      // Growth Rate vs N
       const growthRates = pops.map(N => r * N * (1 - N / K));
       chartGrowth.data.labels = pops.map(n => n.toFixed(1));
       chartGrowth.data.datasets[0].data = growthRates;
@@ -703,7 +764,6 @@
       chartGrowth.options.scales.y.max = Math.ceil(maxGrowth * 1.15) || 10;
       chartGrowth.update();
 
-      // Per Capita Growth Rate vs N
       const perCapita = pops.map((N) => {
         if (N < 0.001) return r;
         return r * (1 - N / K);
@@ -810,23 +870,20 @@
         resetSimulation();
       });
 
-      // Speed slider – functional now
       speedSlider.addEventListener('input', (e) => {
         speedFactor = parseFloat(e.target.value);
         document.getElementById('speedValue').textContent = speedFactor;
       });
 
-      // Initialize N0 max
       const maxN0 = Math.min(300, K - 1);
       n0Slider.max = maxN0;
     }
 
-    // ---- start everything ----
+    // ---- start ----
     window.addEventListener('load', () => {
       initCharts();
       bindSliders();
 
-      // Set initial values
       N0 = 10; r = 1.2; K = 600;
       document.getElementById('n0Slider').value = N0;
       document.getElementById('rSlider').value = r;
@@ -840,10 +897,8 @@
       const maxN0 = Math.min(300, K - 1);
       document.getElementById('n0Slider').max = maxN0;
 
-      // Setup initial state
       resetSimulation();
 
-      // Wire buttons
       document.getElementById('setupBtn').addEventListener('click', resetSimulation);
       document.getElementById('goBtn').addEventListener('click', toggleGo);
     });
