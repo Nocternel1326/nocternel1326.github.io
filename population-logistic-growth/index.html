@@ -831,6 +831,13 @@
 
   let speedFactor = 8;         // controls sub-steps per frame (visual only)
 
+  // ---------- agent movement ----------
+  // Movement is a purely visual layer. It never changes the population
+  // math (which remains the logistic model driven by tick()).
+  const MOVE_SPEED_FRAC = 0.012;   // fraction of worldWidth per second
+  const WANDER_STRENGTH = 1.4;     // radians per second of random turning
+  const MAX_TURN = 0.9;            // clamp on wander step per frame
+
   // ---------- settings ----------
   const settings = {
     naturalDisasters: false,
@@ -879,6 +886,7 @@
       treeCount: 40, treePines: 0.4, treeColorA: '#3a7a3a', treeColorB: '#2f6a2f',
       shrubCount: 30, shrubColorA: '#4a8a3a', shrubColorB: '#5a9a4a',
       rockCount: 20, flowerCount: 45,
+      flowerClumpCount: [8, 12], flowerClumpRadius: [8, 20], flowerClumpSize: [2, 5],
       flowerColors: ['#e8a0b8', '#f0d060', '#d0a0e0', '#ffffff'],
       noiseColor: 'rgba(160, 200, 100, 0.10)'
     },
@@ -890,6 +898,7 @@
       treeCount: 12, treePines: 0.2, treeColorA: '#6a9a4a', treeColorB: '#5a8a3a',
       shrubCount: 15, shrubColorA: '#8aaa5a', shrubColorB: '#7a9a4a',
       rockCount: 12, flowerCount: 20,
+      flowerClumpCount: [4, 7], flowerClumpRadius: [10, 24], flowerClumpSize: [2, 4],
       flowerColors: ['#ffffff', '#f0e0a0', '#e8d0b0'],
       noiseColor: 'rgba(200, 180, 120, 0.15)'
     },
@@ -901,6 +910,7 @@
       treeCount: 6, treePines: 0.5, treeColorA: '#7a8a4a', treeColorB: '#6a7a3a',
       shrubCount: 10, shrubColorA: '#a0a05a', shrubColorB: '#90904a',
       rockCount: 30, flowerCount: 8,
+      flowerClumpCount: [2, 4], flowerClumpRadius: [8, 16], flowerClumpSize: [1, 3],
       flowerColors: ['#f0d0a0', '#e0c090'],
       noiseColor: 'rgba(200, 170, 100, 0.18)'
     },
@@ -912,6 +922,7 @@
       treeCount: 75, treePines: 0.25, treeColorA: '#1e6a2e', treeColorB: '#165024',
       shrubCount: 55, shrubColorA: '#2a7a3a', shrubColorB: '#1e6a2e',
       rockCount: 8, flowerCount: 70,
+      flowerClumpCount: [10, 16], flowerClumpRadius: [9, 22], flowerClumpSize: [3, 6],
       flowerColors: ['#e85070', '#f0a030', '#d060c0', '#ffffff', '#f0e040'],
       noiseColor: 'rgba(60, 140, 60, 0.18)'
     },
@@ -923,6 +934,7 @@
       treeCount: 10, treePines: 0.9, treeColorA: '#3a6a4a', treeColorB: '#2a5a3a',
       shrubCount: 18, shrubColorA: '#5a7a5a', shrubColorB: '#4a6a4a',
       rockCount: 28, flowerCount: 15,
+      flowerClumpCount: [3, 6], flowerClumpRadius: [7, 16], flowerClumpSize: [2, 4],
       flowerColors: ['#c8d0f0', '#e0e8ff', '#ffffff'],
       noiseColor: 'rgba(180, 200, 220, 0.20)'
     },
@@ -934,6 +946,7 @@
       treeCount: 20, treePines: 0.15, treeColorA: '#6a8a3a', treeColorB: '#5a7a2a',
       shrubCount: 40, shrubColorA: '#8a9a4a', shrubColorB: '#7a8a3a',
       rockCount: 22, flowerCount: 30,
+      flowerClumpCount: [6, 10], flowerClumpRadius: [8, 18], flowerClumpSize: [2, 5],
       flowerColors: ['#f0c060', '#e0a040', '#f0e0a0'],
       noiseColor: 'rgba(200, 170, 90, 0.14)'
     }
@@ -1109,19 +1122,52 @@
     }
     terrain.features.rocks = rocks;
 
-    // --- Flowers ---
+    // --- Flowers (now in clumps) ---
     const flowers = [];
     if (settings.showFlowers) {
-      for (let i = 0; i < biomeData.flowerCount; i++) {
-        const x = Math.random() * worldWidth;
-        const y = Math.random() * worldHeight;
-        if (isWater(x, y)) continue;
-        if (y < 70) continue;
-        flowers.push({
-          x, y,
-          color: biomeData.flowerColors[Math.floor(Math.random() * biomeData.flowerColors.length)],
-          size: 2 + Math.random() * 2
-        });
+      const [minClumps, maxClumps] = biomeData.flowerClumpCount;
+      const numClumps = randInt(minClumps, maxClumps);
+      const [minRad, maxRad] = biomeData.flowerClumpRadius;
+      const [minSize, maxSize] = biomeData.flowerClumpSize;
+
+      // Average petals per clump, chosen so total ~ biomeData.flowerCount
+      const avgPerClump = Math.max(1, Math.round(biomeData.flowerCount / numClumps));
+
+      for (let c = 0; c < numClumps; c++) {
+        // Find a land spot for the clump center
+        let cx = 0, cy = 0, ok = false;
+        for (let attempt = 0; attempt < 40; attempt++) {
+          cx = Math.random() * worldWidth;
+          cy = Math.random() * worldHeight;
+          if (isWater(cx, cy)) continue;
+          if (cy < 70) continue;
+          ok = true;
+          break;
+        }
+        if (!ok) continue;
+
+        const clumpColor = biomeData.flowerColors[
+          Math.floor(Math.random() * biomeData.flowerColors.length)
+        ];
+        const clumpRadius = randRange(minRad, maxRad);
+        // Vary the petal count a bit per clump
+        const petals = Math.max(1, avgPerClump + randInt(-1, 1));
+
+        for (let p = 0; p < petals; p++) {
+          // Bias toward the clump center: sqrt gives uniform-by-area scatter
+          const ang = Math.random() * Math.PI * 2;
+          const r = clumpRadius * Math.sqrt(Math.random());
+          const fx = cx + Math.cos(ang) * r;
+          const fy = cy + Math.sin(ang) * r;
+          if (fx < 0 || fy < 0 || fx >= worldWidth || fy >= worldHeight) continue;
+          if (isWater(fx, fy)) continue;
+          if (fy < 70) continue;
+          flowers.push({
+            x: fx, y: fy,
+            color: clumpColor,
+            size: randRange(minSize, maxSize)
+          });
+        }
       }
     }
     terrain.features.flowers = flowers;
@@ -1241,6 +1287,12 @@
         const pos = spawnAgentOnLand();
         a.x = pos.x; a.y = pos.y;
       }
+      // Give a fresh wander heading
+      const heading = Math.random() * Math.PI * 2;
+      const spd = worldWidth * MOVE_SPEED_FRAC * (0.7 + Math.random() * 0.6);
+      a.vx = Math.cos(heading) * spd;
+      a.vy = Math.sin(heading) * spd;
+      a.heading = heading;
     }
   }
 
@@ -1421,12 +1473,21 @@
   }
 
   function spawnAgentOnLand(state) {
+    let pos = { x: worldWidth * 0.5, y: worldHeight * 0.5 };
     for (let attempt = 0; attempt < 100; attempt++) {
       const x = Math.random() * (worldWidth - 10) + 5;
       const y = Math.random() * (worldHeight - 10) + 5;
-      if (!isWater(x, y)) return { x, y, state: state || 'normal' };
+      if (!isWater(x, y)) { pos = { x, y }; break; }
     }
-    return { x: worldWidth * 0.5, y: worldHeight * 0.5, state: state || 'normal' };
+    const heading = Math.random() * Math.PI * 2;
+    const spd = worldWidth * MOVE_SPEED_FRAC * (0.7 + Math.random() * 0.6);
+    return {
+      x: pos.x, y: pos.y,
+      state: state || 'normal',
+      vx: Math.cos(heading) * spd,
+      vy: Math.sin(heading) * spd,
+      heading: heading
+    };
   }
 
   function clearOldDying() {
@@ -1454,6 +1515,57 @@
       for (let i = 0; i < agents.length && remaining > 0; i++) {
         if (agents[i].state !== 'dying') { agents[i].state = 'dying'; remaining--; }
       }
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Agent motion (visual only — does not affect population math).
+  // Each agent wanders slowly. If the next step would land on water,
+  // we try axis-aligned fallbacks and finally reflect the heading.
+  // ---------------------------------------------------------------
+  function updateAgentMotion(dt) {
+    if (dt <= 0) return;
+    const baseSpeed = worldWidth * MOVE_SPEED_FRAC;
+
+    for (let a of agents) {
+      if (a.state === 'dying') continue;
+
+      // Gently wander the heading
+      let turn = (Math.random() - 0.5) * 2 * WANDER_STRENGTH * dt;
+      if (turn > MAX_TURN) turn = MAX_TURN;
+      if (turn < -MAX_TURN) turn = -MAX_TURN;
+      a.heading += turn;
+
+      const spd = Math.hypot(a.vx, a.vy) || baseSpeed;
+      let dx = Math.cos(a.heading) * spd * dt;
+      let dy = Math.sin(a.heading) * spd * dt;
+
+      let nx = a.x + dx;
+      let ny = a.y + dy;
+
+      // Bounce off canvas edges
+      if (nx < 2) { nx = 2; a.heading = Math.PI - a.heading; }
+      if (nx > worldWidth - 2) { nx = worldWidth - 2; a.heading = Math.PI - a.heading; }
+      if (ny < 2) { ny = 2; a.heading = -a.heading; }
+      if (ny > worldHeight - 2) { ny = worldHeight - 2; a.heading = -a.heading; }
+
+      if (!isWater(nx, ny)) {
+        a.x = nx; a.y = ny;
+      } else if (!isWater(nx, a.y)) {
+        // Slide along X
+        a.x = nx;
+        a.heading = -a.heading; // flip Y component
+      } else if (!isWater(a.x, ny)) {
+        // Slide along Y
+        a.y = ny;
+        a.heading = Math.PI - a.heading; // flip X component
+      } else {
+        // Fully blocked: reverse heading and don't move
+        a.heading += Math.PI;
+      }
+
+      a.vx = Math.cos(a.heading) * spd;
+      a.vy = Math.sin(a.heading) * spd;
     }
   }
 
@@ -1678,6 +1790,11 @@
     // Update the per-tick birth/death readouts
     document.getElementById('birthsDisplay').textContent = lastBirths;
     document.getElementById('deathsDisplay').textContent = lastDeaths;
+
+    // Move the agents (visual only). dt here is a rough wall-clock
+    // estimate: it's clamped so a slow frame doesn't teleport agents.
+    const visualDt = Math.min(0.05, (substeps * SIM_DT) * 0.25);
+    updateAgentMotion(visualDt);
 
     // Draw / update only once per frame (visual efficiency)
     drawWorld();
