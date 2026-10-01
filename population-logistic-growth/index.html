@@ -274,7 +274,7 @@
       position: absolute;
       top: 40px;
       right: 0;
-      min-width: 220px;
+      min-width: 240px;
       background: rgba(255, 253, 240, 0.98);
       border: 2px solid #d4c48a;
       border-radius: 10px;
@@ -649,8 +649,8 @@
       <div class="ext-section">
         <div class="ext-section-title">Timeline</div>
         <div class="ext-row"><span>Survived until</span><span id="extSurvivedTime">0.00 t</span></div>
-        <div class="ext-row"><span>Time to reach 50% K</span><span id="extHalfTime">—</span></div>
-        <div class="ext-row"><span>Time to reach 90% K</span><span id="extNinetyTime">—</span></div>
+        <div class="ext-row"><span>First time to reach K/2</span><span id="extHalfTime">—</span></div>
+        <div class="ext-row"><span>First time to reach 90% K</span><span id="extNinetyTime">—</span></div>
         <div class="ext-row"><span>Peak population</span><span id="extPeakPop">0</span></div>
       </div>
 
@@ -842,14 +842,14 @@
             <span class="menu-icon">🖼️</span>
             <span>
               Download current map (.png)
-              <span class="menu-sub">Snapshot of the landscape</span>
+              <span class="menu-sub">High-resolution snapshot</span>
             </span>
           </button>
           <button class="menu-item" id="menuVideo">
             <span class="menu-icon">🎬</span>
             <span id="menuVideoLabel">
               Record video (.webm)
-              <span class="menu-sub">Map with stats overlay</span>
+              <span class="menu-sub">High-resolution, with stats overlay</span>
             </span>
           </button>
         </div>
@@ -932,21 +932,22 @@
   let r = 1.2;
   let K = 600;
 
-  // ---------------------------------------------------------------
-  // SIMULATION TIME STEP — fixed, so statistics are independent of
-  // how fast the animation runs. The speed slider only changes how
-  // many sub-steps we do per frame (visual smoothness), NOT the
-  // underlying math.
-  // ---------------------------------------------------------------
-  const SIM_DT = 0.02;        // fixed time step per sub-step
-  const BASE_SUBSTEPS = 1;    // sub-steps per frame at speed = 1
-
-  let speedFactor = 8;         // controls sub-steps per frame (visual only)
+  const SIM_DT = 0.02;
+  const BASE_SUBSTEPS = 1;
+  let speedFactor = 8;
 
   // ---------- agent movement ----------
-  const MOVE_SPEED_FRAC = 0.012;   // fraction of worldWidth per second
-  const WANDER_STRENGTH = 1.4;     // radians per second of random turning
-  const MAX_TURN = 0.9;            // clamp on wander step per frame
+  const MOVE_SPEED_FRAC = 0.012;
+  const WANDER_STRENGTH = 1.4;
+  const MAX_TURN = 0.9;
+
+  // ---------------------------------------------------------------
+  // EXPORT_SCALE — the multiplier applied when rendering to PNG or
+  // video. A value of 3 means a 1400x800 world exports at 4200x2400.
+  // The world is RE-RENDERED at that size (not upscaled), so lines,
+  // circles, and text stay crisp.
+  // ---------------------------------------------------------------
+  const EXPORT_SCALE = 3;
 
   // ---------- settings ----------
   const settings = {
@@ -957,7 +958,6 @@
     showFlowers: true
   };
 
-  // Natural disaster gap (in time units) — made ~60% more common
   const NATURAL_DISASTER_MIN_GAP = 15;
   const NATURAL_DISASTER_MAX_GAP = 32;
   let nextDisasterTime = Infinity;
@@ -980,13 +980,19 @@
 
   let isExtinct = false;
 
+  // Track lastTick births/deaths for the video overlay
+  let lastTickBirths = 0;
+  let lastTickDeaths = 0;
+
   const historyTimes = [];
   const historyPops = [];
   const historyGrowth = [];
   const historyPerCapita = [];
-  const historyTicks = [];   // one entry per tick, for CSV export
+  const historyTicks = [];
 
   // ---------- BIOMES ----------
+  // flowerCount / flowerClump* were bumped for plain to make flowers
+  // noticeably more abundant there.
   const BIOMES = {
     plain: {
       name: 'Plain', icon: '🌾',
@@ -995,9 +1001,9 @@
       numLakes: [2, 3], lakeRadius: [0.08, 0.16],
       treeCount: 40, treePines: 0.4, treeColorA: '#3a7a3a', treeColorB: '#2f6a2f',
       shrubCount: 30, shrubColorA: '#4a8a3a', shrubColorB: '#5a9a4a',
-      rockCount: 20, flowerCount: 45,
-      flowerClumpCount: [8, 12], flowerClumpRadius: [8, 20], flowerClumpSize: [2, 5],
-      flowerColors: ['#e8a0b8', '#f0d060', '#d0a0e0', '#ffffff'],
+      rockCount: 20, flowerCount: 140,
+      flowerClumpCount: [16, 24], flowerClumpRadius: [10, 24], flowerClumpSize: [2, 6],
+      flowerColors: ['#e8a0b8', '#f0d060', '#d0a0e0', '#ffffff', '#f0a0c0', '#ffe060'],
       noiseColor: 'rgba(160, 200, 100, 0.10)'
     },
     beach: {
@@ -1392,169 +1398,200 @@
     }
   }
 
-  // ---------- draw terrain ----------
-  function drawTerrain() {
-    const grad = ctx.createLinearGradient(0, 0, 0, worldHeight);
+  // ---------------------------------------------------------------
+  // Draw terrain onto an arbitrary 2D context. The ctx is scaled by
+  // `scale` so all coordinates stay in world units while output is
+  // rendered at (scale x) density. Pass scale = 1 for the on-screen
+  // canvas, EXPORT_SCALE for exports.
+  // ---------------------------------------------------------------
+  function drawTerrainTo(targetCtx, scale) {
+    targetCtx.save();
+    targetCtx.setTransform(1, 0, 0, 1, 0, 0);
+    targetCtx.scale(scale, scale);
+
+    const grad = targetCtx.createLinearGradient(0, 0, 0, worldHeight);
     grad.addColorStop(0, biomeData.grassTop);
     grad.addColorStop(0.35, biomeData.grassMid);
     grad.addColorStop(0.75, biomeData.grassBot);
     grad.addColorStop(1, biomeData.grassBot);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, worldWidth, worldHeight);
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(0, 0, worldWidth, worldHeight);
 
-    ctx.save();
+    // Noise patches
+    targetCtx.save();
     for (let np of terrain.features.noise) {
-      ctx.beginPath();
-      ctx.ellipse(np.x, np.y, np.rx, np.ry, np.rot, 0, 2 * Math.PI);
-      ctx.fillStyle = biomeData.noiseColor;
-      ctx.fill();
+      targetCtx.beginPath();
+      targetCtx.ellipse(np.x, np.y, np.rx, np.ry, np.rot, 0, 2 * Math.PI);
+      targetCtx.fillStyle = biomeData.noiseColor;
+      targetCtx.fill();
     }
-    ctx.restore();
+    targetCtx.restore();
 
+    // Lakes
     for (let lake of terrain.features.lakes) {
       const pts = lake.pts;
-      ctx.beginPath();
+      targetCtx.beginPath();
       for (let i = 0; i < pts.length; i++) {
         const p0 = pts[(i - 1 + pts.length) % pts.length];
         const p1 = pts[i];
         const p2 = pts[(i + 1) % pts.length];
         const p3 = pts[(i + 2) % pts.length];
-        if (i === 0) ctx.moveTo(p1.x, p1.y);
+        if (i === 0) targetCtx.moveTo(p1.x, p1.y);
         const cp1x = p1.x + (p2.x - p0.x) / 6;
         const cp1y = p1.y + (p2.y - p0.y) / 6;
         const cp2x = p2.x - (p3.x - p1.x) / 6;
         const cp2y = p2.y - (p3.y - p1.y) / 6;
-        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        targetCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
       }
-      ctx.closePath();
-      ctx.fillStyle = '#5a8a9a';
-      ctx.fill();
+      targetCtx.closePath();
+      targetCtx.fillStyle = '#5a8a9a';
+      targetCtx.fill();
 
-      const lakeGrad = ctx.createRadialGradient(
+      const lakeGrad = targetCtx.createRadialGradient(
         lake.cx - lake.radius * 0.2, lake.cy - lake.radius * 0.2, 5,
         lake.cx, lake.cy, lake.radius * 1.2
       );
       lakeGrad.addColorStop(0, biomeData.lakeColor1);
       lakeGrad.addColorStop(0.6, biomeData.lakeColor2);
       lakeGrad.addColorStop(1, biomeData.lakeColor3);
-      ctx.fillStyle = lakeGrad;
-      ctx.fill();
+      targetCtx.fillStyle = lakeGrad;
+      targetCtx.fill();
     }
 
+    // Shrubs
     for (let sh of terrain.features.shrubs) {
-      ctx.fillStyle = sh.color;
-      ctx.beginPath();
-      ctx.arc(sh.x, sh.y, sh.size * 0.7, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(sh.x - sh.size * 0.5, sh.y + sh.size * 0.2, sh.size * 0.5, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(sh.x + sh.size * 0.5, sh.y + sh.size * 0.15, sh.size * 0.55, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(sh.x - sh.size * 0.2, sh.y - sh.size * 0.25, sh.size * 0.25, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(180, 230, 150, 0.45)';
-      ctx.fill();
+      targetCtx.fillStyle = sh.color;
+      targetCtx.beginPath();
+      targetCtx.arc(sh.x, sh.y, sh.size * 0.7, 0, 2 * Math.PI);
+      targetCtx.fill();
+      targetCtx.beginPath();
+      targetCtx.arc(sh.x - sh.size * 0.5, sh.y + sh.size * 0.2, sh.size * 0.5, 0, 2 * Math.PI);
+      targetCtx.fill();
+      targetCtx.beginPath();
+      targetCtx.arc(sh.x + sh.size * 0.5, sh.y + sh.size * 0.15, sh.size * 0.55, 0, 2 * Math.PI);
+      targetCtx.fill();
+      targetCtx.beginPath();
+      targetCtx.arc(sh.x - sh.size * 0.2, sh.y - sh.size * 0.25, sh.size * 0.25, 0, 2 * Math.PI);
+      targetCtx.fillStyle = 'rgba(180, 230, 150, 0.45)';
+      targetCtx.fill();
     }
 
+    // Rocks
     for (let rk of terrain.features.rocks) {
-      ctx.save();
-      ctx.translate(rk.x, rk.y);
-      ctx.rotate(rk.rot);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, rk.rx, rk.ry, 0, 0, 2 * Math.PI);
-      ctx.fillStyle = '#8a8378';
-      ctx.fill();
-      ctx.strokeStyle = '#5a5450';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.ellipse(-rk.rx * 0.3, -rk.ry * 0.3, rk.rx * 0.4, rk.ry * 0.4, 0, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(220, 215, 205, 0.55)';
-      ctx.fill();
-      ctx.restore();
+      targetCtx.save();
+      targetCtx.translate(rk.x, rk.y);
+      targetCtx.rotate(rk.rot);
+      targetCtx.beginPath();
+      targetCtx.ellipse(0, 0, rk.rx, rk.ry, 0, 0, 2 * Math.PI);
+      targetCtx.fillStyle = '#8a8378';
+      targetCtx.fill();
+      targetCtx.strokeStyle = '#5a5450';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.stroke();
+      targetCtx.beginPath();
+      targetCtx.ellipse(-rk.rx * 0.3, -rk.ry * 0.3, rk.rx * 0.4, rk.ry * 0.4, 0, 0, 2 * Math.PI);
+      targetCtx.fillStyle = 'rgba(220, 215, 205, 0.55)';
+      targetCtx.fill();
+      targetCtx.restore();
     }
 
+    // Flowers
     for (let fl of terrain.features.flowers) {
-      ctx.beginPath();
-      ctx.arc(fl.x, fl.y, fl.size, 0, 2 * Math.PI);
-      ctx.fillStyle = fl.color;
-      ctx.fill();
+      targetCtx.beginPath();
+      targetCtx.arc(fl.x, fl.y, fl.size, 0, 2 * Math.PI);
+      targetCtx.fillStyle = fl.color;
+      targetCtx.fill();
     }
 
+    // Trees
     for (let t of terrain.features.trees) {
-      ctx.fillStyle = '#5a3a1a';
-      ctx.fillRect(t.x - 2.5, t.y, 5, t.trunkH);
+      targetCtx.fillStyle = '#5a3a1a';
+      targetCtx.fillRect(t.x - 2.5, t.y, 5, t.trunkH);
 
       if (t.type === 'pine') {
-        ctx.fillStyle = t.color;
+        targetCtx.fillStyle = t.color;
         const baseY = t.y + t.trunkH;
         const layers = 3;
         for (let l = 0; l < layers; l++) {
           const lw = t.size * (1 - l * 0.22);
           const ly = baseY - l * (t.size * 0.55);
-          ctx.beginPath();
-          ctx.moveTo(t.x, ly - t.size * 1.0);
-          ctx.lineTo(t.x - lw, ly + t.size * 0.15);
-          ctx.lineTo(t.x + lw, ly + t.size * 0.15);
-          ctx.closePath();
-          ctx.fill();
+          targetCtx.beginPath();
+          targetCtx.moveTo(t.x, ly - t.size * 1.0);
+          targetCtx.lineTo(t.x - lw, ly + t.size * 0.15);
+          targetCtx.lineTo(t.x + lw, ly + t.size * 0.15);
+          targetCtx.closePath();
+          targetCtx.fill();
         }
       } else {
-        ctx.fillStyle = t.color;
+        targetCtx.fillStyle = t.color;
         const cy = t.y + t.trunkH - t.size * 0.4;
-        ctx.beginPath();
-        ctx.arc(t.x, cy, t.size * 0.85, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(t.x - t.size * 0.5, cy + t.size * 0.25, t.size * 0.55, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(t.x + t.size * 0.5, cy + t.size * 0.25, t.size * 0.55, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(t.x - t.size * 0.25, cy - t.size * 0.25, t.size * 0.35, 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgba(160, 220, 140, 0.4)';
-        ctx.fill();
+        targetCtx.beginPath();
+        targetCtx.arc(t.x, cy, t.size * 0.85, 0, 2 * Math.PI);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.arc(t.x - t.size * 0.5, cy + t.size * 0.25, t.size * 0.55, 0, 2 * Math.PI);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.arc(t.x + t.size * 0.5, cy + t.size * 0.25, t.size * 0.55, 0, 2 * Math.PI);
+        targetCtx.fill();
+        targetCtx.beginPath();
+        targetCtx.arc(t.x - t.size * 0.25, cy - t.size * 0.25, t.size * 0.35, 0, 2 * Math.PI);
+        targetCtx.fillStyle = 'rgba(160, 220, 140, 0.4)';
+        targetCtx.fill();
       }
     }
+
+    targetCtx.restore();
+  }
+
+  // Convenience wrapper for the on-screen canvas.
+  function drawTerrain() {
+    drawTerrainTo(ctx, 1);
   }
 
   // ---------- agents ----------
   let agents = [];
 
-  function drawWorld() {
-    drawTerrain();
+  function drawAgentsTo(targetCtx, scale) {
+    targetCtx.save();
+    targetCtx.setTransform(1, 0, 0, 1, 0, 0);
+    targetCtx.scale(scale, scale);
+
     const baseRadius = Math.max(1.2, Math.min(2.0, worldWidth / 500));
     for (let a of agents) {
       if (a.state === 'dying') {
-        ctx.strokeStyle = '#cc2222';
-        ctx.lineWidth = 2.4;
+        targetCtx.strokeStyle = '#cc2222';
+        targetCtx.lineWidth = 2.4;
         const s = baseRadius + 2.2;
-        ctx.beginPath();
-        ctx.moveTo(a.x - s, a.y - s);
-        ctx.lineTo(a.x + s, a.y + s);
-        ctx.moveTo(a.x + s, a.y - s);
-        ctx.lineTo(a.x - s, a.y + s);
-        ctx.stroke();
+        targetCtx.beginPath();
+        targetCtx.moveTo(a.x - s, a.y - s);
+        targetCtx.lineTo(a.x + s, a.y + s);
+        targetCtx.moveTo(a.x + s, a.y - s);
+        targetCtx.lineTo(a.x - s, a.y + s);
+        targetCtx.stroke();
       } else if (a.state === 'born') {
-        ctx.fillStyle = '#22aa22';
-        ctx.beginPath();
-        ctx.arc(a.x, a.y, baseRadius + 1.2, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(34, 170, 34, 0.4)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(a.x, a.y, baseRadius + 2.6, 0, 2 * Math.PI);
-        ctx.stroke();
+        targetCtx.fillStyle = '#22aa22';
+        targetCtx.beginPath();
+        targetCtx.arc(a.x, a.y, baseRadius + 1.2, 0, 2 * Math.PI);
+        targetCtx.fill();
+        targetCtx.strokeStyle = 'rgba(34, 170, 34, 0.4)';
+        targetCtx.lineWidth = 1.5;
+        targetCtx.beginPath();
+        targetCtx.arc(a.x, a.y, baseRadius + 2.6, 0, 2 * Math.PI);
+        targetCtx.stroke();
       } else {
-        ctx.fillStyle = '#111111';
-        ctx.beginPath();
-        ctx.arc(a.x, a.y, baseRadius, 0, 2 * Math.PI);
-        ctx.fill();
+        targetCtx.fillStyle = '#111111';
+        targetCtx.beginPath();
+        targetCtx.arc(a.x, a.y, baseRadius, 0, 2 * Math.PI);
+        targetCtx.fill();
       }
     }
+    targetCtx.restore();
+  }
+
+  function drawWorld() {
+    drawTerrainTo(ctx, 1);
+    drawAgentsTo(ctx, 1);
   }
 
   function popToDots(pop) {
@@ -1797,6 +1834,8 @@
 
     document.getElementById('birthsDisplay').textContent = '0';
     document.getElementById('deathsDisplay').textContent = killed;
+    lastTickBirths = 0;
+    lastTickDeaths = killed;
 
     drawWorld();
     updateStats();
@@ -1854,6 +1893,8 @@
 
     document.getElementById('birthsDisplay').textContent = lastBirths;
     document.getElementById('deathsDisplay').textContent = lastDeaths;
+    lastTickBirths = lastBirths;
+    lastTickDeaths = lastDeaths;
 
     const visualDt = Math.min(0.05, (substeps * SIM_DT) * 0.25);
     updateAgentMotion(visualDt);
@@ -2001,6 +2042,9 @@
     currentGrowthRate = 0;
     currentPerCapita = r;
 
+    lastTickBirths = 0;
+    lastTickDeaths = 0;
+
     historyTimes.length = 0;
     historyPops.length = 0;
     historyGrowth.length = 0;
@@ -2042,7 +2086,6 @@
     resetState();
   }
 
-  // ---------- go / pause ----------
   function toggleGo() {
     if (isExtinct) return;
     const goBtn = document.getElementById('goBtn');
@@ -2164,15 +2207,28 @@
     triggerDownload(blob, `logistic-growth-stats_${currentBiome}_${stampNow()}.csv`);
   }
 
-  // ---------- PNG download ----------
+  // ---------- PNG download (high-res) ----------
   function downloadMapPNG() {
-    // The world canvas already has the current frame drawn on it.
-    canvas.toBlob((blob) => {
+    // Render the terrain + agents into an offscreen canvas at
+    // EXPORT_SCALE x the world size, then add a high-res stats panel.
+    const w = worldWidth * EXPORT_SCALE;
+    const h = worldHeight * EXPORT_SCALE;
+    const off = document.createElement('canvas');
+    off.width = w;
+    off.height = h;
+    const offCtx = off.getContext('2d');
+    offCtx.imageSmoothingEnabled = false;
+
+    drawTerrainTo(offCtx, EXPORT_SCALE);
+    drawAgentsTo(offCtx, EXPORT_SCALE);
+    drawStatsOverlay(offCtx, w, h, EXPORT_SCALE, false);
+
+    off.toBlob((blob) => {
       if (blob) triggerDownload(blob, `logistic-growth-map_${currentBiome}_${stampNow()}.png`);
     }, 'image/png');
   }
 
-  // ---------- Video recording ----------
+  // ---------- Video recording (high-res) ----------
   let recorder = null;
   let recorderChunks = [];
   let recorderStream = null;
@@ -2182,28 +2238,28 @@
   let recorderRaf = null;
   let recordingActive = false;
 
-  function drawStatsOverlay(c2d, w, h) {
-    // Top-right overlay panel
-    const padding = 12;
-    const lineHeight = 16;
-    const boxW = 220;
-    const boxH = 6 * lineHeight + padding; // 6 lines
-
+  // Draw the stats panel on the top-right of a (w x h) target.
+  // scale is the export scale so we can size the panel proportionally.
+  // showRecBadge = true → include the pulsing "REC" pill top-left.
+  function drawStatsOverlay(c2d, w, h, scale, showRecBadge) {
+    const padding = 12 * scale;
+    const lineHeight = 16 * scale;
+    const boxW = 220 * scale;
+    const boxH = 6 * lineHeight + padding;
     const x0 = w - boxW - padding;
     const y0 = padding;
 
     c2d.save();
-    // Background panel
+
+    // Panel background
     c2d.fillStyle = 'rgba(245, 238, 200, 0.92)';
     c2d.strokeStyle = '#d4c48a';
-    c2d.lineWidth = 2;
-    roundRect(c2d, x0, y0, boxW, boxH, 10);
+    c2d.lineWidth = 2 * scale;
+    roundRect(c2d, x0, y0, boxW, boxH, 10 * scale);
     c2d.fill();
     c2d.stroke();
 
-    // Text
-    c2d.fillStyle = '#3a3020';
-    c2d.font = '600 12px "Segoe UI", Roboto, system-ui, sans-serif';
+    c2d.font = `600 ${12 * scale}px "Segoe UI", Roboto, system-ui, sans-serif`;
     c2d.textBaseline = 'top';
 
     const ratioPct = ((population / K) * 100).toFixed(1) + '%';
@@ -2216,35 +2272,38 @@
       ['Deaths (tick)', String(lastTickDeaths)]
     ];
 
-    let ty = y0 + padding * 0.5 + 2;
+    let ty = y0 + padding * 0.5 + 2 * scale;
     for (let i = 0; i < rows.length; i++) {
       const [label, value] = rows[i];
       c2d.fillStyle = '#5a4a2a';
       c2d.textAlign = 'left';
-      c2d.fillText(label, x0 + 10, ty);
+      c2d.fillText(label, x0 + 10 * scale, ty);
       c2d.fillStyle = '#1a3a1a';
       c2d.textAlign = 'right';
-      c2d.fillText(value, x0 + boxW - 10, ty);
+      c2d.fillText(value, x0 + boxW - 10 * scale, ty);
       ty += lineHeight;
     }
 
-    // Recording marker top-left
-    c2d.fillStyle = 'rgba(180, 40, 40, 0.92)';
-    roundRect(c2d, padding, padding, 62, 22, 11);
-    c2d.fill();
-    c2d.fillStyle = '#fff8e0';
-    c2d.font = '700 12px "Segoe UI", Roboto, system-ui, sans-serif';
-    c2d.textAlign = 'left';
-    c2d.textBaseline = 'middle';
-    // Pulsing dot
-    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 250);
-    c2d.globalAlpha = pulse;
-    c2d.beginPath();
-    c2d.arc(padding + 11, padding + 11, 4, 0, Math.PI * 2);
-    c2d.fillStyle = '#fff8e0';
-    c2d.fill();
-    c2d.globalAlpha = 1;
-    c2d.fillText('REC', padding + 20, padding + 12);
+    if (showRecBadge) {
+      // Pulsing REC pill top-left
+      const pillW = 62 * scale;
+      const pillH = 22 * scale;
+      c2d.fillStyle = 'rgba(180, 40, 40, 0.92)';
+      roundRect(c2d, padding, padding, pillW, pillH, 11 * scale);
+      c2d.fill();
+      c2d.font = `700 ${12 * scale}px "Segoe UI", Roboto, system-ui, sans-serif`;
+      c2d.textBaseline = 'middle';
+      c2d.textAlign = 'left';
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 250);
+      c2d.globalAlpha = pulse;
+      c2d.beginPath();
+      c2d.arc(padding + 11 * scale, padding + 11 * scale, 4 * scale, 0, Math.PI * 2);
+      c2d.fillStyle = '#fff8e0';
+      c2d.fill();
+      c2d.globalAlpha = 1;
+      c2d.fillStyle = '#fff8e0';
+      c2d.fillText('REC', padding + 20 * scale, padding + 12 * scale);
+    }
 
     c2d.restore();
   }
@@ -2263,21 +2322,17 @@
     c2d.closePath();
   }
 
-  // Track lastTick births/deaths for the overlay
-  let lastTickBirths = 0;
-  let lastTickDeaths = 0;
-
   function startVideoRecording() {
     if (recordingActive) return;
 
+    // Composite canvas at EXPORT_SCALE resolution.
     recorderCanvas = document.createElement('canvas');
-    recorderCanvas.width = worldWidth;
-    recorderCanvas.height = worldHeight;
+    recorderCanvas.width = worldWidth * EXPORT_SCALE;
+    recorderCanvas.height = worldHeight * EXPORT_SCALE;
     recorderCtx = recorderCanvas.getContext('2d');
 
     recorderStream = recorderCanvas.captureStream(30);
 
-    // Prefer vp9 if available, else default.
     const candidates = [
       'video/webm;codecs=vp9',
       'video/webm;codecs=vp8',
@@ -2292,7 +2347,10 @@
       return;
     }
 
-    recorder = new MediaRecorder(recorderStream, { mimeType: mime });
+    recorder = new MediaRecorder(recorderStream, {
+      mimeType: mime,
+      videoBitsPerSecond: 12_000_000
+    });
     recorderChunks = [];
 
     recorder.ondataavailable = (e) => {
@@ -2308,7 +2366,6 @@
     recordingActive = true;
     startRecorderDrawing();
 
-    // UI feedback
     document.getElementById('recBadge').classList.add('show');
     const item = document.getElementById('menuVideo');
     item.classList.add('recording');
@@ -2316,7 +2373,6 @@
       'Stop recording' +
       '<span class="menu-sub">Saves the .webm file</span>';
 
-    // Auto-start the simulation if it isn't running, so there's motion.
     if (!isRunning && !isExtinct) toggleGo();
   }
 
@@ -2336,18 +2392,22 @@
     item.classList.remove('recording');
     document.getElementById('menuVideoLabel').innerHTML =
       'Record video (.webm)' +
-      '<span class="menu-sub">Map with stats overlay</span>';
+      '<span class="menu-sub">High-resolution, with stats overlay</span>';
   }
 
+  // Each frame: re-render terrain + agents at EXPORT_SCALE onto the
+  // composite canvas, then draw the stats overlay. This produces a
+  // genuinely high-resolution capture (not an upscaled screen grab).
   function startRecorderDrawing() {
     if (recorderDrawing) return;
     recorderDrawing = true;
     const loop = () => {
       if (!recorderDrawing) return;
-      // Compose frame
+      recorderCtx.setTransform(1, 0, 0, 1, 0, 0);
       recorderCtx.clearRect(0, 0, recorderCanvas.width, recorderCanvas.height);
-      recorderCtx.drawImage(canvas, 0, 0, recorderCanvas.width, recorderCanvas.height);
-      drawStatsOverlay(recorderCtx, recorderCanvas.width, recorderCanvas.height);
+      drawTerrainTo(recorderCtx, EXPORT_SCALE);
+      drawAgentsTo(recorderCtx, EXPORT_SCALE);
+      drawStatsOverlay(recorderCtx, recorderCanvas.width, recorderCanvas.height, EXPORT_SCALE, true);
       recorderRaf = requestAnimationFrame(loop);
     };
     loop();
@@ -2408,12 +2468,8 @@
     });
 
     menuVideo.addEventListener('click', () => {
-      if (recordingActive) {
-        stopVideoRecording();
-      } else {
-        startVideoRecording();
-      }
-      // keep the menu open while recording so the "Stop" item stays visible
+      if (recordingActive) stopVideoRecording();
+      else startVideoRecording();
     });
   }
 
