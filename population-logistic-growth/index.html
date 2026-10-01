@@ -698,11 +698,11 @@
         <span class="stat-value" id="statK">600</span>
       </div>
       <div class="stat-row">
-        <span class="stat-label">Time to reach K/2</span>
+        <span class="stat-label">First time to reach K/2</span>
         <span class="stat-value" id="statHalfTime">—</span>
       </div>
       <div class="stat-row">
-        <span class="stat-label">Time to reach 90% K</span>
+        <span class="stat-label">First time to reach 90% K</span>
         <span class="stat-value" id="statNinetyTime">—</span>
       </div>
       <div class="stat-row">
@@ -941,12 +941,6 @@
   const WANDER_STRENGTH = 1.4;
   const MAX_TURN = 0.9;
 
-  // ---------------------------------------------------------------
-  // EXPORT_SCALE — the multiplier applied when rendering to PNG or
-  // video. A value of 3 means a 1400x800 world exports at 4200x2400.
-  // The world is RE-RENDERED at that size (not upscaled), so lines,
-  // circles, and text stay crisp.
-  // ---------------------------------------------------------------
   const EXPORT_SCALE = 3;
 
   // ---------- settings ----------
@@ -973,14 +967,16 @@
   let disasterDeaths = 0;
   let peakPopulation = 10;
 
+  // "First time" markers. These are set once per run the first time the
+  // population crosses the threshold, and never cleared until resetState().
   let timeToHalfK = null;
   let timeToNinetyK = null;
+
   let currentGrowthRate = 0;
   let currentPerCapita = 0;
 
   let isExtinct = false;
 
-  // Track lastTick births/deaths for the video overlay
   let lastTickBirths = 0;
   let lastTickDeaths = 0;
 
@@ -991,8 +987,6 @@
   const historyTicks = [];
 
   // ---------- BIOMES ----------
-  // flowerCount / flowerClump* were bumped for plain to make flowers
-  // noticeably more abundant there.
   const BIOMES = {
     plain: {
       name: 'Plain', icon: '🌾',
@@ -1113,7 +1107,6 @@
     mctx.fillRect(0, 0, worldWidth, worldHeight);
     mctx.fillStyle = '#ffffff';
 
-    // --- Lakes ---
     const lakes = [];
     if (settings.showLakes) {
       const [minL, maxL] = biomeData.numLakes;
@@ -1177,7 +1170,6 @@
     terrain.waterMask = mask;
     terrain.waterCtx = mctx;
 
-    // --- Trees ---
     const trees = [];
     if (settings.showTrees) {
       let attempts = 0;
@@ -1203,7 +1195,6 @@
     }
     terrain.features.trees = trees;
 
-    // --- Shrubs ---
     const shrubs = [];
     if (settings.showTrees) {
       for (let i = 0; i < biomeData.shrubCount; i++) {
@@ -1220,7 +1211,6 @@
     }
     terrain.features.shrubs = shrubs;
 
-    // --- Rocks ---
     const rocks = [];
     if (settings.showRocks) {
       for (let i = 0; i < biomeData.rockCount; i++) {
@@ -1238,7 +1228,6 @@
     }
     terrain.features.rocks = rocks;
 
-    // --- Flowers (in clumps) ---
     const flowers = [];
     if (settings.showFlowers) {
       const [minClumps, maxClumps] = biomeData.flowerClumpCount;
@@ -1283,7 +1272,6 @@
     }
     terrain.features.flowers = flowers;
 
-    // --- Noise patches ---
     const noise = [];
     for (let i = 0; i < 60; i++) {
       noise.push({
@@ -1399,10 +1387,7 @@
   }
 
   // ---------------------------------------------------------------
-  // Draw terrain onto an arbitrary 2D context. The ctx is scaled by
-  // `scale` so all coordinates stay in world units while output is
-  // rendered at (scale x) density. Pass scale = 1 for the on-screen
-  // canvas, EXPORT_SCALE for exports.
+  // Draw terrain to any 2D context at a chosen scale.
   // ---------------------------------------------------------------
   function drawTerrainTo(targetCtx, scale) {
     targetCtx.save();
@@ -1417,7 +1402,6 @@
     targetCtx.fillStyle = grad;
     targetCtx.fillRect(0, 0, worldWidth, worldHeight);
 
-    // Noise patches
     targetCtx.save();
     for (let np of terrain.features.noise) {
       targetCtx.beginPath();
@@ -1427,7 +1411,6 @@
     }
     targetCtx.restore();
 
-    // Lakes
     for (let lake of terrain.features.lakes) {
       const pts = lake.pts;
       targetCtx.beginPath();
@@ -1458,7 +1441,6 @@
       targetCtx.fill();
     }
 
-    // Shrubs
     for (let sh of terrain.features.shrubs) {
       targetCtx.fillStyle = sh.color;
       targetCtx.beginPath();
@@ -1476,7 +1458,6 @@
       targetCtx.fill();
     }
 
-    // Rocks
     for (let rk of terrain.features.rocks) {
       targetCtx.save();
       targetCtx.translate(rk.x, rk.y);
@@ -1495,7 +1476,6 @@
       targetCtx.restore();
     }
 
-    // Flowers
     for (let fl of terrain.features.flowers) {
       targetCtx.beginPath();
       targetCtx.arc(fl.x, fl.y, fl.size, 0, 2 * Math.PI);
@@ -1503,7 +1483,6 @@
       targetCtx.fill();
     }
 
-    // Trees
     for (let t of terrain.features.trees) {
       targetCtx.fillStyle = '#5a3a1a';
       targetCtx.fillRect(t.x - 2.5, t.y, 5, t.trunkH);
@@ -1544,7 +1523,6 @@
     targetCtx.restore();
   }
 
-  // Convenience wrapper for the on-screen canvas.
   function drawTerrain() {
     drawTerrainTo(ctx, 1);
   }
@@ -1708,6 +1686,10 @@
     totalBirths += births;
     totalDeaths += deaths;
 
+    // "First time" markers. Only set the very first time the
+    // population crosses each threshold, and never clear them until
+    // a full reset. This is the fix: disasters used to wipe them out
+    // (see triggerDisaster) which corrupted the "first time" semantics.
     if (timeToHalfK === null && population >= K / 2) timeToHalfK = currentTime;
     if (timeToNinetyK === null && population >= 0.9 * K) timeToNinetyK = currentTime;
 
@@ -1807,8 +1789,9 @@
     const dotsKilled = Math.min(normalIdx.length, Math.round(agents.length * d.kill));
     for (let i = 0; i < dotsKilled; i++) agents[normalIdx[i]].state = 'dying';
 
-    if (population < K / 2) timeToHalfK = null;
-    if (population < 0.9 * K) timeToNinetyK = null;
+    // NOTE: Do NOT clear timeToHalfK / timeToNinetyK here. Those are
+    // "first time ever in this run" markers — they must survive any
+    // disaster that temporarily pushes N below the threshold.
 
     historyTimes.push(currentTime);
     historyPops.push(population);
@@ -2037,8 +2020,11 @@
     totalBirths = 0;
     totalDeaths = 0;
     disasterDeaths = 0;
+
+    // New run → reset the "first time" markers.
     timeToHalfK = null;
     timeToNinetyK = null;
+
     currentGrowthRate = 0;
     currentPerCapita = r;
 
@@ -2181,6 +2167,8 @@
       '# total_deaths,' + totalDeaths,
       '# disaster_deaths,' + disasterDeaths,
       '# peak_population,' + peakPopulation,
+      '# first_time_half_K,' + (timeToHalfK !== null ? timeToHalfK.toFixed(4) : 'never'),
+      '# first_time_90pct_K,' + (timeToNinetyK !== null ? timeToNinetyK.toFixed(4) : 'never'),
       ''
     );
 
@@ -2207,10 +2195,8 @@
     triggerDownload(blob, `logistic-growth-stats_${currentBiome}_${stampNow()}.csv`);
   }
 
-  // ---------- PNG download (high-res) ----------
+  // ---------- PNG download ----------
   function downloadMapPNG() {
-    // Render the terrain + agents into an offscreen canvas at
-    // EXPORT_SCALE x the world size, then add a high-res stats panel.
     const w = worldWidth * EXPORT_SCALE;
     const h = worldHeight * EXPORT_SCALE;
     const off = document.createElement('canvas');
@@ -2228,7 +2214,7 @@
     }, 'image/png');
   }
 
-  // ---------- Video recording (high-res) ----------
+  // ---------- Video recording ----------
   let recorder = null;
   let recorderChunks = [];
   let recorderStream = null;
@@ -2238,9 +2224,6 @@
   let recorderRaf = null;
   let recordingActive = false;
 
-  // Draw the stats panel on the top-right of a (w x h) target.
-  // scale is the export scale so we can size the panel proportionally.
-  // showRecBadge = true → include the pulsing "REC" pill top-left.
   function drawStatsOverlay(c2d, w, h, scale, showRecBadge) {
     const padding = 12 * scale;
     const lineHeight = 16 * scale;
@@ -2251,7 +2234,6 @@
 
     c2d.save();
 
-    // Panel background
     c2d.fillStyle = 'rgba(245, 238, 200, 0.92)';
     c2d.strokeStyle = '#d4c48a';
     c2d.lineWidth = 2 * scale;
@@ -2285,7 +2267,6 @@
     }
 
     if (showRecBadge) {
-      // Pulsing REC pill top-left
       const pillW = 62 * scale;
       const pillH = 22 * scale;
       c2d.fillStyle = 'rgba(180, 40, 40, 0.92)';
@@ -2325,7 +2306,6 @@
   function startVideoRecording() {
     if (recordingActive) return;
 
-    // Composite canvas at EXPORT_SCALE resolution.
     recorderCanvas = document.createElement('canvas');
     recorderCanvas.width = worldWidth * EXPORT_SCALE;
     recorderCanvas.height = worldHeight * EXPORT_SCALE;
@@ -2395,9 +2375,6 @@
       '<span class="menu-sub">High-resolution, with stats overlay</span>';
   }
 
-  // Each frame: re-render terrain + agents at EXPORT_SCALE onto the
-  // composite canvas, then draw the stats overlay. This produces a
-  // genuinely high-resolution capture (not an upscaled screen grab).
   function startRecorderDrawing() {
     if (recorderDrawing) return;
     recorderDrawing = true;
@@ -2418,7 +2395,6 @@
     if (recorderRaf) { cancelAnimationFrame(recorderRaf); recorderRaf = null; }
   }
 
-  // ---------- shared download helpers ----------
   function triggerDownload(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2434,7 +2410,6 @@
     return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   }
 
-  // ---------- download menu wiring ----------
   function bindDownload() {
     const btn = document.getElementById('downloadBtn');
     const menu = document.getElementById('downloadMenu');
