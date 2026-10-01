@@ -741,6 +741,7 @@
 
   <div class="charts-panel visible" id="chartsPanel">
     <div class="chart-actions">
+      <button class="chart-action-btn" id="downloadBtn" title="Download statistics as CSV">⬇</button>
       <button class="chart-action-btn" id="settingsBtn" title="Settings">⚙</button>
       <button class="chart-action-btn" id="chartToggle" title="Toggle chart size">⤢</button>
     </div>
@@ -866,6 +867,7 @@
   const historyPops = [];
   const historyGrowth = [];
   const historyPerCapita = [];
+  const historyTicks = [];   // one entry per tick, for CSV export
 
   // ---------- BIOMES ----------
   const BIOMES = {
@@ -1488,6 +1490,18 @@
     historyGrowth.push({ N: N, rate: currentGrowthRate });
     historyPerCapita.push({ N: N, rate: currentPerCapita });
 
+    // Full per-tick record for CSV export
+    historyTicks.push({
+      t: currentTime,
+      N_before: N,
+      births: births,
+      deaths: deaths,
+      N_after: population,
+      dN_dt: currentGrowthRate,
+      per_capita: currentPerCapita,
+      event: ''
+    });
+
     return { births, deaths };
   }
 
@@ -1572,6 +1586,18 @@
     historyPops.push(population);
     historyGrowth.push({ N: before, rate: -killed });
     historyPerCapita.push({ N: before, rate: -killed / Math.max(1, before) });
+
+    // Record disaster as its own row in the CSV history
+    historyTicks.push({
+      t: currentTime,
+      N_before: before,
+      births: 0,
+      deaths: killed,
+      N_after: population,
+      dN_dt: -killed,
+      per_capita: -killed / Math.max(1, before),
+      event: d.name
+    });
 
     const banner = document.getElementById('disasterBanner');
     banner.textContent = `${d.icon}  ${d.name}  ·  ${killed} died  ·  N = ${population}`;
@@ -1801,6 +1827,7 @@
     historyPops.length = 0;
     historyGrowth.length = 0;
     historyPerCapita.length = 0;
+    historyTicks.length = 0;
 
     agents = [];
     const dots = popToDots(N0);
@@ -1915,6 +1942,65 @@
     });
   }
 
+  // ---------- CSV download ----------
+  function downloadCSV() {
+    const headers = [
+      'tick', 'time_t', 'N_before', 'births', 'deaths', 'N_after',
+      'dN_dt', 'per_capita', 'event'
+    ];
+    const lines = [headers.join(',')];
+
+    // Metadata rows as comment-style prefix lines (kept simple: leading # comment)
+    lines.unshift(
+      '# Logistic Growth Simulation Export',
+      '# biome,' + currentBiome,
+      '# r,' + r.toFixed(4),
+      '# K,' + K,
+      '# N0,' + N0,
+      '# exported_at,' + new Date().toISOString(),
+      '# total_ticks,' + historyTicks.length,
+      '# total_births,' + totalBirths,
+      '# total_deaths,' + totalDeaths,
+      '# disaster_deaths,' + disasterDeaths,
+      '# peak_population,' + peakPopulation,
+      ''
+    );
+
+    for (let i = 0; i < historyTicks.length; i++) {
+      const h = historyTicks[i];
+      const eventField = h.event
+        ? '"' + String(h.event).replace(/"/g, '""') + '"'
+        : '';
+      lines.push([
+        i,
+        h.t.toFixed(4),
+        h.N_before,
+        h.births,
+        h.deaths,
+        h.N_after,
+        h.dN_dt.toFixed(4),
+        h.per_capita.toFixed(6),
+        eventField
+      ].join(','));
+    }
+
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.href = url;
+    a.download = `logistic-growth-stats_${currentBiome}_${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function bindDownload() {
+    document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+  }
+
   function bindDisasters() {
     document.querySelectorAll('.disaster-btn').forEach(btn => {
       btn.addEventListener('click', () => triggerDisaster(btn.dataset.disaster));
@@ -1981,6 +2067,7 @@
     bindChartToggle();
     bindDisasters();
     bindSettings();
+    bindDownload();
 
     N0 = 10; r = 1.2; K = 600;
     document.getElementById('n0Slider').value = N0;
