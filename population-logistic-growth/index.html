@@ -1579,6 +1579,10 @@
     if (disasterBannerTimeout) clearTimeout(disasterBannerTimeout);
     disasterBannerTimeout = setTimeout(() => banner.classList.remove('show'), 2400);
 
+    // Reflect the disaster's deaths in the per-tick readouts
+    document.getElementById('birthsDisplay').textContent = '0';
+    document.getElementById('deathsDisplay').textContent = killed;
+
     drawWorld();
     updateStats();
     updateCharts();
@@ -1623,12 +1627,19 @@
     // Determine sub-steps per frame from speed slider
     const substeps = Math.max(1, Math.round(BASE_SUBSTEPS * speedFactor));
 
+    // Track the most recent sub-step's births/deaths so we can display
+    // them. This makes the readout reflect a single SIM_DT "tick".
+    let lastBirths = 0;
+    let lastDeaths = 0;
+
     // Run N sub-steps, each advancing SIM_DT
     for (let s = 0; s < substeps; s++) {
       currentTime += SIM_DT;
 
       clearOldDying();
       const { births, deaths } = tick(SIM_DT);
+      lastBirths = births;
+      lastDeaths = deaths;
       applyBirths(births);
       applyDeaths(deaths);
 
@@ -1637,6 +1648,10 @@
       if (checkExtinction()) return;
       if (!isRunning) return;
     }
+
+    // Update the per-tick birth/death readouts
+    document.getElementById('birthsDisplay').textContent = lastBirths;
+    document.getElementById('deathsDisplay').textContent = lastDeaths;
 
     // Draw / update only once per frame (visual efficiency)
     drawWorld();
