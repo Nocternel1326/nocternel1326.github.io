@@ -252,6 +252,7 @@
       gap: 0.4rem;
       align-self: flex-end;
       margin-bottom: 0.3rem;
+      position: relative;
     }
     .chart-action-btn {
       background: rgba(245, 238, 200, 0.96);
@@ -266,6 +267,88 @@
     }
     .chart-action-btn:hover { background: #fff8e0; transform: scale(1.05); }
     .chart-action-btn.active { background: #d8f0c0; border-color: #8ab86a; }
+
+    /* ---- Download dropdown ---- */
+    .download-wrap { position: relative; }
+    .download-menu {
+      position: absolute;
+      top: 40px;
+      right: 0;
+      min-width: 220px;
+      background: rgba(255, 253, 240, 0.98);
+      border: 2px solid #d4c48a;
+      border-radius: 10px;
+      box-shadow: 0 12px 26px -6px rgba(120, 100, 40, 0.55);
+      padding: 0.35rem;
+      display: none;
+      z-index: 30;
+    }
+    .download-menu.show { display: block; }
+    .download-menu .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-radius: 7px;
+      padding: 0.5rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #3a3020;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.12s ease;
+    }
+    .download-menu .menu-item:hover { background: #fff8e0; }
+    .download-menu .menu-item.recording {
+      background: #f5d0d0;
+      color: #8a1a1a;
+    }
+    .download-menu .menu-item .menu-icon {
+      font-size: 1rem;
+      width: 1.2rem;
+      text-align: center;
+    }
+    .download-menu .menu-item .menu-sub {
+      display: block;
+      font-size: 0.66rem;
+      color: #8a7a5a;
+      font-weight: 400;
+      margin-top: 0.05rem;
+    }
+
+    /* ---- Recording badge ---- */
+    .rec-badge {
+      position: absolute;
+      top: 5.8rem;
+      left: 1rem;
+      display: none;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(180, 40, 40, 0.95);
+      color: #fff8e0;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.6px;
+      padding: 0.3rem 0.7rem;
+      border-radius: 30px;
+      box-shadow: 0 6px 16px rgba(80, 0, 0, 0.5);
+      z-index: 25;
+      pointer-events: none;
+      text-transform: uppercase;
+    }
+    .rec-badge.show { display: inline-flex; }
+    .rec-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #fff8e0;
+      animation: recPulse 1s infinite ease-in-out;
+    }
+    @keyframes recPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
 
     /* ---- Settings panel ---- */
     .settings-panel {
@@ -684,6 +767,10 @@
 
   <div class="disaster-banner" id="disasterBanner"></div>
 
+  <div class="rec-badge" id="recBadge">
+    <span class="rec-dot"></span> REC
+  </div>
+
   <!-- Settings panel -->
   <div class="settings-panel panel" id="settingsPanel">
     <h2>⚙️ Settings <button class="settings-close" id="settingsClose">✕</button></h2>
@@ -741,7 +828,32 @@
 
   <div class="charts-panel visible" id="chartsPanel">
     <div class="chart-actions">
-      <button class="chart-action-btn" id="downloadBtn" title="Download statistics as CSV">⬇</button>
+      <div class="download-wrap">
+        <button class="chart-action-btn" id="downloadBtn" title="Download options">⬇</button>
+        <div class="download-menu" id="downloadMenu">
+          <button class="menu-item" id="menuCsv">
+            <span class="menu-icon">📄</span>
+            <span>
+              Download statistics (.csv)
+              <span class="menu-sub">Every tick's population data</span>
+            </span>
+          </button>
+          <button class="menu-item" id="menuPng">
+            <span class="menu-icon">🖼️</span>
+            <span>
+              Download current map (.png)
+              <span class="menu-sub">Snapshot of the landscape</span>
+            </span>
+          </button>
+          <button class="menu-item" id="menuVideo">
+            <span class="menu-icon">🎬</span>
+            <span id="menuVideoLabel">
+              Record video (.webm)
+              <span class="menu-sub">Map with stats overlay</span>
+            </span>
+          </button>
+        </div>
+      </div>
       <button class="chart-action-btn" id="settingsBtn" title="Settings">⚙</button>
       <button class="chart-action-btn" id="chartToggle" title="Toggle chart size">⤢</button>
     </div>
@@ -832,8 +944,6 @@
   let speedFactor = 8;         // controls sub-steps per frame (visual only)
 
   // ---------- agent movement ----------
-  // Movement is a purely visual layer. It never changes the population
-  // math (which remains the logistic model driven by tick()).
   const MOVE_SPEED_FRAC = 0.012;   // fraction of worldWidth per second
   const WANDER_STRENGTH = 1.4;     // radians per second of random turning
   const MAX_TURN = 0.9;            // clamp on wander step per frame
@@ -1122,19 +1232,16 @@
     }
     terrain.features.rocks = rocks;
 
-    // --- Flowers (now in clumps) ---
+    // --- Flowers (in clumps) ---
     const flowers = [];
     if (settings.showFlowers) {
       const [minClumps, maxClumps] = biomeData.flowerClumpCount;
       const numClumps = randInt(minClumps, maxClumps);
       const [minRad, maxRad] = biomeData.flowerClumpRadius;
       const [minSize, maxSize] = biomeData.flowerClumpSize;
-
-      // Average petals per clump, chosen so total ~ biomeData.flowerCount
       const avgPerClump = Math.max(1, Math.round(biomeData.flowerCount / numClumps));
 
       for (let c = 0; c < numClumps; c++) {
-        // Find a land spot for the clump center
         let cx = 0, cy = 0, ok = false;
         for (let attempt = 0; attempt < 40; attempt++) {
           cx = Math.random() * worldWidth;
@@ -1150,11 +1257,9 @@
           Math.floor(Math.random() * biomeData.flowerColors.length)
         ];
         const clumpRadius = randRange(minRad, maxRad);
-        // Vary the petal count a bit per clump
         const petals = Math.max(1, avgPerClump + randInt(-1, 1));
 
         for (let p = 0; p < petals; p++) {
-          // Bias toward the clump center: sqrt gives uniform-by-area scatter
           const ang = Math.random() * Math.PI * 2;
           const r = clumpRadius * Math.sqrt(Math.random());
           const fx = cx + Math.cos(ang) * r;
@@ -1172,7 +1277,7 @@
     }
     terrain.features.flowers = flowers;
 
-    // --- Noise patches (randomized per terrain) ---
+    // --- Noise patches ---
     const noise = [];
     for (let i = 0; i < 60; i++) {
       noise.push({
@@ -1258,19 +1363,12 @@
     canvas.width = worldWidth;
     canvas.height = worldHeight;
     generateTerrain();
-    // Re-place all existing agents so none end up on water
     respawnAgentsOnLand();
     drawWorld();
   }
 
-  // ---------------------------------------------------------------
-  // Move every living agent to a valid land position. Called after
-  // terrain regeneration (settings toggles / resize) so no species
-  // ends up standing on a lake.
-  // ---------------------------------------------------------------
   function respawnAgentsOnLand() {
     for (let a of agents) {
-      // Try to find a nearby land spot first (keeps visual continuity)
       let placed = false;
       for (let attempt = 0; attempt < 20; attempt++) {
         const nx = a.x + (Math.random() - 0.5) * 80;
@@ -1283,11 +1381,9 @@
         }
       }
       if (!placed) {
-        // Fallback: fully random land spot
         const pos = spawnAgentOnLand();
         a.x = pos.x; a.y = pos.y;
       }
-      // Give a fresh wander heading
       const heading = Math.random() * Math.PI * 2;
       const spd = worldWidth * MOVE_SPEED_FRAC * (0.7 + Math.random() * 0.6);
       a.vx = Math.cos(heading) * spd;
@@ -1306,7 +1402,6 @@
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, worldWidth, worldHeight);
 
-    // Noise patches — now driven by the pre-generated random list
     ctx.save();
     for (let np of terrain.features.noise) {
       ctx.beginPath();
@@ -1316,7 +1411,6 @@
     }
     ctx.restore();
 
-    // Lakes
     for (let lake of terrain.features.lakes) {
       const pts = lake.pts;
       ctx.beginPath();
@@ -1347,7 +1441,6 @@
       ctx.fill();
     }
 
-    // Shrubs
     for (let sh of terrain.features.shrubs) {
       ctx.fillStyle = sh.color;
       ctx.beginPath();
@@ -1365,7 +1458,6 @@
       ctx.fill();
     }
 
-    // Rocks
     for (let rk of terrain.features.rocks) {
       ctx.save();
       ctx.translate(rk.x, rk.y);
@@ -1384,7 +1476,6 @@
       ctx.restore();
     }
 
-    // Flowers
     for (let fl of terrain.features.flowers) {
       ctx.beginPath();
       ctx.arc(fl.x, fl.y, fl.size, 0, 2 * Math.PI);
@@ -1392,7 +1483,6 @@
       ctx.fill();
     }
 
-    // Trees
     for (let t of terrain.features.trees) {
       ctx.fillStyle = '#5a3a1a';
       ctx.fillRect(t.x - 2.5, t.y, 5, t.trunkH);
@@ -1518,11 +1608,6 @@
     }
   }
 
-  // ---------------------------------------------------------------
-  // Agent motion (visual only — does not affect population math).
-  // Each agent wanders slowly. If the next step would land on water,
-  // we try axis-aligned fallbacks and finally reflect the heading.
-  // ---------------------------------------------------------------
   function updateAgentMotion(dt) {
     if (dt <= 0) return;
     const baseSpeed = worldWidth * MOVE_SPEED_FRAC;
@@ -1530,7 +1615,6 @@
     for (let a of agents) {
       if (a.state === 'dying') continue;
 
-      // Gently wander the heading
       let turn = (Math.random() - 0.5) * 2 * WANDER_STRENGTH * dt;
       if (turn > MAX_TURN) turn = MAX_TURN;
       if (turn < -MAX_TURN) turn = -MAX_TURN;
@@ -1543,7 +1627,6 @@
       let nx = a.x + dx;
       let ny = a.y + dy;
 
-      // Bounce off canvas edges
       if (nx < 2) { nx = 2; a.heading = Math.PI - a.heading; }
       if (nx > worldWidth - 2) { nx = worldWidth - 2; a.heading = Math.PI - a.heading; }
       if (ny < 2) { ny = 2; a.heading = -a.heading; }
@@ -1552,15 +1635,12 @@
       if (!isWater(nx, ny)) {
         a.x = nx; a.y = ny;
       } else if (!isWater(nx, a.y)) {
-        // Slide along X
         a.x = nx;
-        a.heading = -a.heading; // flip Y component
+        a.heading = -a.heading;
       } else if (!isWater(a.x, ny)) {
-        // Slide along Y
         a.y = ny;
-        a.heading = Math.PI - a.heading; // flip X component
+        a.heading = Math.PI - a.heading;
       } else {
-        // Fully blocked: reverse heading and don't move
         a.heading += Math.PI;
       }
 
@@ -1569,7 +1649,7 @@
     }
   }
 
-  // ---------- tick (uses fixed SIM_DT, independent of animation speed) ----------
+  // ---------- tick ----------
   function tick(dt) {
     const N = population;
     if (N <= 0) return { births: 0, deaths: 0 };
@@ -1602,7 +1682,6 @@
     historyGrowth.push({ N: N, rate: currentGrowthRate });
     historyPerCapita.push({ N: N, rate: currentPerCapita });
 
-    // Full per-tick record for CSV export
     historyTicks.push({
       t: currentTime,
       N_before: N,
@@ -1699,7 +1778,6 @@
     historyGrowth.push({ N: before, rate: -killed });
     historyPerCapita.push({ N: before, rate: -killed / Math.max(1, before) });
 
-    // Record disaster as its own row in the CSV history
     historyTicks.push({
       t: currentTime,
       N_before: before,
@@ -1717,7 +1795,6 @@
     if (disasterBannerTimeout) clearTimeout(disasterBannerTimeout);
     disasterBannerTimeout = setTimeout(() => banner.classList.remove('show'), 2400);
 
-    // Reflect the disaster's deaths in the per-tick readouts
     document.getElementById('birthsDisplay').textContent = '0';
     document.getElementById('deathsDisplay').textContent = killed;
 
@@ -1731,8 +1808,6 @@
     checkExtinction();
   }
 
-  // ---------- natural disaster scheduling ----------
-  // Gaps reduced by ~60% so disasters are noticeably more common.
   function scheduleNextNaturalDisaster() {
     if (!settings.naturalDisasters) {
       nextDisasterTime = Infinity;
@@ -1754,23 +1829,13 @@
   }
 
   // ---------- animation ----------
-  // The animation loop runs one tick of SIM_DT per "sub-step", and the
-  // number of sub-steps per frame is controlled by the speed slider.
-  // This means the SPEED SLIDER ONLY AFFECTS SMOOTHNESS — not the math.
-  // Over the same wall-clock time, whatever speed you choose, you get
-  // statistically identical simulation results.
   function stepSimulation() {
     if (!isRunning || isExtinct) return;
 
-    // Determine sub-steps per frame from speed slider
     const substeps = Math.max(1, Math.round(BASE_SUBSTEPS * speedFactor));
-
-    // Track the most recent sub-step's births/deaths so we can display
-    // them. This makes the readout reflect a single SIM_DT "tick".
     let lastBirths = 0;
     let lastDeaths = 0;
 
-    // Run N sub-steps, each advancing SIM_DT
     for (let s = 0; s < substeps; s++) {
       currentTime += SIM_DT;
 
@@ -1787,16 +1852,12 @@
       if (!isRunning) return;
     }
 
-    // Update the per-tick birth/death readouts
     document.getElementById('birthsDisplay').textContent = lastBirths;
     document.getElementById('deathsDisplay').textContent = lastDeaths;
 
-    // Move the agents (visual only). dt here is a rough wall-clock
-    // estimate: it's clamped so a slow frame doesn't teleport agents.
     const visualDt = Math.min(0.05, (substeps * SIM_DT) * 0.25);
     updateAgentMotion(visualDt);
 
-    // Draw / update only once per frame (visual efficiency)
     drawWorld();
     updateStats();
     updateCharts();
@@ -2035,8 +2096,6 @@
       restartSimulation();
     });
 
-    // Speed slider only changes how many sub-steps we do per frame.
-    // No restart needed.
     speedSlider.addEventListener('input', (e) => {
       speedFactor = parseFloat(e.target.value);
       document.getElementById('speedValue').textContent = speedFactor;
@@ -2067,7 +2126,6 @@
     ];
     const lines = [headers.join(',')];
 
-    // Metadata rows as comment-style prefix lines (kept simple: leading # comment)
     lines.unshift(
       '# Logistic Growth Simulation Export',
       '# biome,' + currentBiome,
@@ -2103,19 +2161,260 @@
 
     const csv = lines.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    triggerDownload(blob, `logistic-growth-stats_${currentBiome}_${stampNow()}.csv`);
+  }
+
+  // ---------- PNG download ----------
+  function downloadMapPNG() {
+    // The world canvas already has the current frame drawn on it.
+    canvas.toBlob((blob) => {
+      if (blob) triggerDownload(blob, `logistic-growth-map_${currentBiome}_${stampNow()}.png`);
+    }, 'image/png');
+  }
+
+  // ---------- Video recording ----------
+  let recorder = null;
+  let recorderChunks = [];
+  let recorderStream = null;
+  let recorderCanvas = null;
+  let recorderCtx = null;
+  let recorderDrawing = false;
+  let recorderRaf = null;
+  let recordingActive = false;
+
+  function drawStatsOverlay(c2d, w, h) {
+    // Top-right overlay panel
+    const padding = 12;
+    const lineHeight = 16;
+    const boxW = 220;
+    const boxH = 6 * lineHeight + padding; // 6 lines
+
+    const x0 = w - boxW - padding;
+    const y0 = padding;
+
+    c2d.save();
+    // Background panel
+    c2d.fillStyle = 'rgba(245, 238, 200, 0.92)';
+    c2d.strokeStyle = '#d4c48a';
+    c2d.lineWidth = 2;
+    roundRect(c2d, x0, y0, boxW, boxH, 10);
+    c2d.fill();
+    c2d.stroke();
+
+    // Text
+    c2d.fillStyle = '#3a3020';
+    c2d.font = '600 12px "Segoe UI", Roboto, system-ui, sans-serif';
+    c2d.textBaseline = 'top';
+
+    const ratioPct = ((population / K) * 100).toFixed(1) + '%';
+    const rows = [
+      ['t', currentTime.toFixed(2)],
+      ['N', String(population)],
+      ['N / K', ratioPct],
+      ['dN/dt', currentGrowthRate.toFixed(2)],
+      ['Births (tick)', String(lastTickBirths)],
+      ['Deaths (tick)', String(lastTickDeaths)]
+    ];
+
+    let ty = y0 + padding * 0.5 + 2;
+    for (let i = 0; i < rows.length; i++) {
+      const [label, value] = rows[i];
+      c2d.fillStyle = '#5a4a2a';
+      c2d.textAlign = 'left';
+      c2d.fillText(label, x0 + 10, ty);
+      c2d.fillStyle = '#1a3a1a';
+      c2d.textAlign = 'right';
+      c2d.fillText(value, x0 + boxW - 10, ty);
+      ty += lineHeight;
+    }
+
+    // Recording marker top-left
+    c2d.fillStyle = 'rgba(180, 40, 40, 0.92)';
+    roundRect(c2d, padding, padding, 62, 22, 11);
+    c2d.fill();
+    c2d.fillStyle = '#fff8e0';
+    c2d.font = '700 12px "Segoe UI", Roboto, system-ui, sans-serif';
+    c2d.textAlign = 'left';
+    c2d.textBaseline = 'middle';
+    // Pulsing dot
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 250);
+    c2d.globalAlpha = pulse;
+    c2d.beginPath();
+    c2d.arc(padding + 11, padding + 11, 4, 0, Math.PI * 2);
+    c2d.fillStyle = '#fff8e0';
+    c2d.fill();
+    c2d.globalAlpha = 1;
+    c2d.fillText('REC', padding + 20, padding + 12);
+
+    c2d.restore();
+  }
+
+  function roundRect(c2d, x, y, w, h, r) {
+    c2d.beginPath();
+    c2d.moveTo(x + r, y);
+    c2d.lineTo(x + w - r, y);
+    c2d.quadraticCurveTo(x + w, y, x + w, y + r);
+    c2d.lineTo(x + w, y + h - r);
+    c2d.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c2d.lineTo(x + r, y + h);
+    c2d.quadraticCurveTo(x, y + h, x, y + h - r);
+    c2d.lineTo(x, y + r);
+    c2d.quadraticCurveTo(x, y, x + r, y);
+    c2d.closePath();
+  }
+
+  // Track lastTick births/deaths for the overlay
+  let lastTickBirths = 0;
+  let lastTickDeaths = 0;
+
+  function startVideoRecording() {
+    if (recordingActive) return;
+
+    recorderCanvas = document.createElement('canvas');
+    recorderCanvas.width = worldWidth;
+    recorderCanvas.height = worldHeight;
+    recorderCtx = recorderCanvas.getContext('2d');
+
+    recorderStream = recorderCanvas.captureStream(30);
+
+    // Prefer vp9 if available, else default.
+    const candidates = [
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm'
+    ];
+    let mime = '';
+    for (const c of candidates) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(c)) { mime = c; break; }
+    }
+    if (!mime) {
+      alert('Video recording is not supported in this browser.');
+      return;
+    }
+
+    recorder = new MediaRecorder(recorderStream, { mimeType: mime });
+    recorderChunks = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) recorderChunks.push(e.data);
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(recorderChunks, { type: mime });
+      triggerDownload(blob, `logistic-growth-video_${currentBiome}_${stampNow()}.webm`);
+      recorderChunks = [];
+    };
+
+    recorder.start(250);
+    recordingActive = true;
+    startRecorderDrawing();
+
+    // UI feedback
+    document.getElementById('recBadge').classList.add('show');
+    const item = document.getElementById('menuVideo');
+    item.classList.add('recording');
+    document.getElementById('menuVideoLabel').innerHTML =
+      'Stop recording' +
+      '<span class="menu-sub">Saves the .webm file</span>';
+
+    // Auto-start the simulation if it isn't running, so there's motion.
+    if (!isRunning && !isExtinct) toggleGo();
+  }
+
+  function stopVideoRecording() {
+    if (!recordingActive) return;
+    recordingActive = false;
+    stopRecorderDrawing();
+
+    if (recorder && recorder.state !== 'inactive') {
+      try { recorder.stop(); } catch (e) {}
+    }
+    recorder = null;
+    recorderStream = null;
+
+    document.getElementById('recBadge').classList.remove('show');
+    const item = document.getElementById('menuVideo');
+    item.classList.remove('recording');
+    document.getElementById('menuVideoLabel').innerHTML =
+      'Record video (.webm)' +
+      '<span class="menu-sub">Map with stats overlay</span>';
+  }
+
+  function startRecorderDrawing() {
+    if (recorderDrawing) return;
+    recorderDrawing = true;
+    const loop = () => {
+      if (!recorderDrawing) return;
+      // Compose frame
+      recorderCtx.clearRect(0, 0, recorderCanvas.width, recorderCanvas.height);
+      recorderCtx.drawImage(canvas, 0, 0, recorderCanvas.width, recorderCanvas.height);
+      drawStatsOverlay(recorderCtx, recorderCanvas.width, recorderCanvas.height);
+      recorderRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  }
+
+  function stopRecorderDrawing() {
+    recorderDrawing = false;
+    if (recorderRaf) { cancelAnimationFrame(recorderRaf); recorderRaf = null; }
+  }
+
+  // ---------- shared download helpers ----------
+  function triggerDownload(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     a.href = url;
-    a.download = `logistic-growth-stats_${currentBiome}_${stamp}.csv`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function stampNow() {
+    return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  }
+
+  // ---------- download menu wiring ----------
   function bindDownload() {
-    document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+    const btn = document.getElementById('downloadBtn');
+    const menu = document.getElementById('downloadMenu');
+    const menuCsv = document.getElementById('menuCsv');
+    const menuPng = document.getElementById('menuPng');
+    const menuVideo = document.getElementById('menuVideo');
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.toggle('show');
+      btn.classList.toggle('active', menu.classList.contains('show'));
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && e.target !== btn) {
+        menu.classList.remove('show');
+        btn.classList.remove('active');
+      }
+    });
+
+    menuCsv.addEventListener('click', () => {
+      downloadCSV();
+      menu.classList.remove('show');
+      btn.classList.remove('active');
+    });
+
+    menuPng.addEventListener('click', () => {
+      downloadMapPNG();
+      menu.classList.remove('show');
+      btn.classList.remove('active');
+    });
+
+    menuVideo.addEventListener('click', () => {
+      if (recordingActive) {
+        stopVideoRecording();
+      } else {
+        startVideoRecording();
+      }
+      // keep the menu open while recording so the "Stop" item stays visible
+    });
   }
 
   function bindDisasters() {
@@ -2148,7 +2447,6 @@
       }
     });
 
-    // Terrain toggles: regenerate, then respawn agents safely on land.
     document.getElementById('toggleLakes').addEventListener('change', (e) => {
       settings.showLakes = e.target.checked;
       generateTerrain();
